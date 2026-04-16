@@ -13,9 +13,12 @@ export const metadata: Metadata = {
   description: BRAND.tagline,
   keywords: ['immobilier', 'togo', 'lomé', 'maison', 'terrain', 'villa', 'location', 'vente'],
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
     shortcut: '/favicon.svg',
-    apple: '/icons/icon.svg',
+    apple: '/icons/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
   appleWebApp: {

@@ -54,7 +54,7 @@ self.addEventListener('push', event => {
   if (!event.data) return
   const data = event.data.json()
   event.waitUntil(
-    self.registration.showNotification(data.titre ?? 'Dôme Immobilier', {
+    self.registration.showNotification(data.titre ?? 'LOFIA.', {
       body: data.corps ?? '',
       icon: '/icons/icon.svg',
       data: { url: data.lien ?? '/' },
