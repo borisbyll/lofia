@@ -52,8 +52,6 @@
   /* Boutons et éléments interactifs : zone tactile min 44px */
   button, [role="button"] {
     min-height: 44px;
-    display: inline-flex;
-    align-items: center;
   }
 
   /* Scrollbar custom */
