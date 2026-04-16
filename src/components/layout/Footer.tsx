@@ -1,93 +1,116 @@
-import { Link } from 'react-router-dom'
-import { Home, Mail, Phone } from 'lucide-react'
+import Link from 'next/link'
+import { Phone, Mail, MapPin, Facebook, Instagram } from 'lucide-react'
 import { BRAND } from '@/lib/brand'
+import { LogoLofia } from '@/components/lofia/LogoLofia'
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1a3c5e] text-white mt-auto">
-      <div className="wrap py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+    <footer style={{ background: '#4D0A15' }}>
+      {/* Ligne dorée haut */}
+      <div className="h-1 w-full" style={{ background: '#D4A832' }} />
 
-          {/* Brand — modifier dans src/lib/brand.ts */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              {BRAND.logo && BRAND.logo !== '/logo.png' ? (
-                <img src={BRAND.logo} alt={BRAND.name} className="h-8 brightness-0 invert"/>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-                    <Home size={16} className="text-white"/>
-                  </div>
-                  <span className="font-black text-lg tracking-tight">{BRAND.logoText}</span>
-                </div>
-              )}
+      <div className="wrap py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+          {/* Marque */}
+          <div className="md:col-span-1">
+            <div className="mb-4">
+              <LogoLofia variant="light" className="text-2xl" />
             </div>
-            <p className="text-white/60 text-sm leading-relaxed">{BRAND.tagline}</p>
-            <p className="text-white/40 text-xs mt-4">Togo · Afrique de l'Ouest</p>
+            <p className="text-sm leading-relaxed mb-5 text-white/55">
+              {BRAND.tagline}
+            </p>
+            <div className="flex gap-3">
+              <a href="#" className="w-9 h-9 rounded-xl flex items-center justify-center text-white bg-white/10 hover:bg-accent transition-colors">
+                <Facebook size={16} />
+              </a>
+              <a href="#" className="w-9 h-9 rounded-xl flex items-center justify-center text-white bg-white/10 hover:bg-accent transition-colors">
+                <Instagram size={16} />
+              </a>
+            </div>
           </div>
 
-          {/* Liens */}
+          {/* Explorer */}
           <div>
-            <h4 className="font-bold text-sm uppercase tracking-widest text-white/50 mb-4">Navigation</h4>
-            <ul className="space-y-2.5">
+            <p className="font-bold text-xs uppercase tracking-widest mb-4 text-accent">
+              Explorer
+            </p>
+            <div className="space-y-2.5">
               {[
-                { to: '/',          label: 'Accueil' },
-                { to: '/vente',     label: 'Acheter un bien' },
-                { to: '/location',  label: 'Louer un bien' },
-                { to: '/inscription', label: 'Publier une annonce' },
-              ].map(({ to, label }) => (
-                <li key={to}>
-                  <Link to={to} className="text-white/70 text-sm hover:text-white transition-colors">
-                    {label}
-                  </Link>
-                </li>
+                { href: '/vente',       label: 'Acheter un bien' },
+                { href: '/location',    label: 'Louer un bien' },
+                { href: '/inscription', label: 'Publier une annonce' },
+                { href: '/connexion',   label: 'Se connecter' },
+              ].map(l => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="block text-sm text-white/55 hover:text-white transition-colors"
+                >
+                  {l.label}
+                </Link>
               ))}
-            </ul>
+            </div>
+          </div>
+
+          {/* Informations */}
+          <div>
+            <p className="font-bold text-xs uppercase tracking-widest mb-4 text-accent">
+              Informations
+            </p>
+            <div className="space-y-2.5">
+              {[
+                { href: '/faq',             label: 'FAQ' },
+                { href: '/conditions',      label: "Conditions d'utilisation" },
+                { href: '/confidentialite', label: 'Confidentialité' },
+                { href: '/contact',         label: 'Nous contacter' },
+              ].map(l => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="block text-sm text-white/55 hover:text-white transition-colors"
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Contact */}
           <div>
-            <h4 className="font-bold text-sm uppercase tracking-widest text-white/50 mb-4">Contact</h4>
-            <ul className="space-y-3">
-              {BRAND.email && (
-                <li className="flex items-center gap-2.5 text-sm text-white/70">
-                  <Mail size={15} className="text-white/40 flex-shrink-0"/>
-                  <a href={`mailto:${BRAND.email}`} className="hover:text-white transition-colors">
-                    {BRAND.email}
-                  </a>
-                </li>
-              )}
-              {BRAND.phone && (
-                <li className="flex items-center gap-2.5 text-sm text-white/70">
-                  <Phone size={15} className="text-white/40 flex-shrink-0"/>
-                  {BRAND.phone}
-                </li>
-              )}
-            </ul>
-            {(BRAND.social.facebook || BRAND.social.instagram) && (
-              <div className="flex gap-3 mt-5">
-                {BRAND.social.facebook && (
-                  <a href={BRAND.social.facebook} target="_blank" rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors text-white text-xs font-bold">
-                    f
-                  </a>
-                )}
-                {BRAND.social.instagram && (
-                  <a href={BRAND.social.instagram} target="_blank" rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors text-white text-xs font-bold">
-                    ig
-                  </a>
-                )}
+            <p className="font-bold text-xs uppercase tracking-widest mb-4 text-accent">
+              Contact
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5 text-sm text-white/55">
+                <MapPin size={14} className="shrink-0 text-accent" />
+                {BRAND.adresse}
               </div>
-            )}
+              <a
+                href={`mailto:${BRAND.email}`}
+                className="flex items-center gap-2.5 text-sm text-white/55 hover:text-accent transition-colors"
+              >
+                <Mail size={14} className="shrink-0 text-accent" />
+                {BRAND.email}
+              </a>
+              <a
+                href={`https://wa.me/${BRAND.whatsapp.replace('+', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2.5 text-sm text-white/55 hover:text-accent transition-colors"
+              >
+                <Phone size={14} className="shrink-0 text-accent" />
+                WhatsApp Support
+              </a>
+            </div>
           </div>
+
         </div>
 
-        <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-white/40 text-xs">
-            © {new Date().getFullYear()} {BRAND.name}. Tous droits réservés.
-          </p>
-          <p className="text-white/30 text-xs">Plateforme immobilière au Togo</p>
+        {/* Bottom bar */}
+        <div className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/35 border-t border-white/10">
+          <p>© {new Date().getFullYear()} {BRAND.name} — Tous droits réservés</p>
+          <p>Plateforme immobilière agréée • Togo • {BRAND.domaine}</p>
         </div>
       </div>
     </footer>

@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@layer base {
+  :root {
+    /* Dôme Immobilier — Design system v1.0 */
+    --background: 60 100% 98%;        /* #FFFDF5 crème */
+    --foreground: 20 100% 5%;         /* #1a0a00 brun nuit */
+    --card: 0 0% 100%;
+    --card-foreground: 20 100% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 100% 5%;
+    --secondary: 40 60% 93%;          /* or pâle #F5E6C0 */
+    --secondary-foreground: 20 100% 5%;
+    --muted: 40 30% 95%;
+    --muted-foreground: 30 30% 35%;   /* brun doux */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 350 20% 88%;
+    --input: 350 20% 88%;
+    --ring: 349 69% 32%;              /* bordeaux */
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    overflow-x: hidden;
+    color: #1a0a00;
+    background-color: #FFFDF5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #1a0a00;
+    line-height: 1.2;
+  }
+
+  /* Boutons et éléments interactifs : zone tactile min 44px */
+  button, [role="button"] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { background: #FAE8EC; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #E8909F; }
+}
+
+@layer components {
+  /* Conteneur principal */
+  .wrap {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section {
+    @apply py-12 md:py-16;
+  }
+
+  /* Cards */
+  .card-bien {
+    @apply bg-white rounded-2xl border border-primary-50 shadow-sm hover:shadow-[0_8px_32px_rgba(139,26,46,.10)] transition-all duration-300 overflow-hidden;
+  }
+
+  /* Skeleton loader */
+  .skeleton {
+    @apply bg-gradient-to-r from-primary-50 via-or-pale to-primary-50 animate-shimmer;
+    background-size: 200% 100%;
+  }
+
+  /* ── BADGES — charte Dôme ─────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-vente        { @apply badge bg-primary-50 text-primary-600; }
+  .badge-courte       { @apply badge bg-accent-50 text-amber-800; }
+  .badge-longue       { @apply badge bg-emerald-50 text-emerald-800; }
+  .badge-primary      { @apply badge bg-primary-50 text-primary-600; }
+  .badge-accent       { @apply badge bg-accent-50 text-amber-800; }
+  .badge-success      { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-warning      { @apply badge bg-accent-50 text-amber-700; }
+  .badge-danger       { @apply badge bg-red-50 text-red-600; }
+  .badge-gray         { @apply badge bg-or-pale text-brun-doux; }
+  .badge-verifie      { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-en-attente   { @apply badge bg-accent-50 text-amber-700; }
+  .badge-geo          { @apply badge bg-emerald-50 text-emerald-700; }
+
+  /* ── INPUTS ─────────────────────────────── */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-primary-100 bg-white text-brun-nuit text-sm
+           placeholder:text-brun-doux/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20
+           focus:border-primary-400 transition-colors;
+  }
+
+  .label-field {
+    @apply block text-sm font-semibold text-brun-nuit mb-1.5;
+  }
+
+  /* ── BOUTONS — charte Dôme ───────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm
+           transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 44px;
+  }
+  /* Primaire — Bordeaux #8B1A2E */
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 shadow-sm hover:shadow-[0_4px_16px_rgba(139,26,46,.30)];
+  }
+  /* Secondaire — Ocre doré #D4A832 */
+  .btn-accent {
+    @apply btn text-white shadow-sm hover:shadow-md;
+    background-color: #D4A832;
+  }
+  .btn-accent:hover { background-color: #B08A28; }
+  /* Outline bordeaux */
+  .btn-outline {
+    @apply btn border-2 border-primary-500 text-primary-500 hover:bg-primary-50;
+  }
+  /* Ghost */
+  .btn-ghost {
+    @apply btn text-brun-doux hover:bg-primary-50 hover:text-primary-600;
+  }
+  /* Géolocalisation — vert forêt */
+  .btn-geo {
+    @apply btn text-white hover:opacity-90 shadow-sm;
+    background-color: #2D6A4F;
+  }
+  .btn-danger {
+    @apply btn bg-red-500 text-white hover:bg-red-600;
+  }
+  .btn-white {
+    @apply btn bg-white text-primary-600 hover:bg-primary-50 shadow-sm border border-white/20;
+  }
+
+  /* ── PRIX immobilier — toujours bordeaux gras ── */
+  .prix {
+    @apply font-black text-primary-500;
+  }
+
+  /* ── Page header ───────────────────────── */
+  .page-header { @apply mb-8; }
+  .page-title  { @apply text-2xl md:text-3xl font-black text-brun-nuit mb-2 leading-tight; }
+  .page-subtitle { @apply text-brun-doux text-base; }
+
+  /* ── Stat card ─────────────────────────── */
+  .stat-card {
+    @apply bg-white rounded-2xl p-5 border border-primary-50 shadow-sm;
+  }
+
+  /* ── Dashboard card ────────────────────── */
+  .dashboard-card {
+    @apply bg-white rounded-2xl border border-primary-50 shadow-sm p-5;
+  }
+
+  /* Bottom navigation spacer (mobile) */
+  .pb-nav {
+    @apply pb-20 md:pb-0;
+  }
+
+  /* ── Section titles ─────────────────── */
+  .section-title {
+    @apply text-2xl md:text-3xl font-black text-brun-nuit leading-tight;
+  }
+  .section-subtitle {
+    @apply text-brun-doux text-sm sm:text-base mt-2;
+  }
+}
+
+/* ── Utilities ─────────────────────────────── */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Safe area pour iOS */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+  nav, footer, .bottom-nav { display: none !important; }
+}
+
+/* Google Maps custom markers — palette Dôme */
+.map-marker-vente   { background: #8B1A2E; }
+.map-marker-courte  { background: #D4A832; }
+.map-marker-longue  { background: #2D6A4F; }

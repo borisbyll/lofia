@@ -1,3 +1,10 @@
+# Secrets — NE JAMAIS COMMITER
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
 # Logs
 logs
 *.log
@@ -11,6 +18,15 @@ node_modules
 dist
 dist-ssr
 *.local
+
+# Next.js
+.next/
+out/
+tsconfig.tsbuildinfo
+
+# Misc
+_vite_backup/
+*.bak
 
 # Editor directories and files
 .vscode/*

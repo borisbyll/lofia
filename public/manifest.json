@@ -1,0 +1,27 @@
+{
+  "name": "LOFIA. — Immobilier Togo",
+  "short_name": "LOFIA.",
+  "description": "Achetez, louez et vendez des biens immobiliers au Togo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFDF5",
+  "theme_color": "#8B1A2E",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["lifestyle", "business", "travel"]
+}
