@@ -23,10 +23,10 @@ export default function HeroSection() {
     router.push('/vente?geo=1')
   }
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'tous', label: 'Tous' },
-    { key: 'vente', label: 'Vente' },
-    { key: 'location', label: 'Location' },
+  const tabs: { key: Tab; label: string; href: string }[] = [
+    { key: 'tous',     label: 'Tous',     href: '/vente' },
+    { key: 'vente',    label: 'Vente',    href: '/vente' },
+    { key: 'location', label: 'Location', href: '/location' },
   ]
 
   return (
@@ -62,10 +62,10 @@ export default function HeroSection() {
 
           {/* Tabs */}
           <div className="inline-flex bg-white/10 backdrop-blur-sm rounded-2xl p-1 gap-1 mb-5 sm:mb-6 border border-white/10">
-            {tabs.map(({ key, label }) => (
+            {tabs.map(({ key, label, href }) => (
               <button
                 key={key}
-                onClick={() => setTab(key)}
+                onClick={() => { setTab(key); router.push(href) }}
                 className={cn(
                   'px-4 sm:px-5 py-2 rounded-xl text-sm font-bold transition-all duration-200',
                   tab === key
