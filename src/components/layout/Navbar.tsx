@@ -12,6 +12,7 @@ import NotifBell from './NotifBell'
 import { LogoLofia } from '@/components/lofia/LogoLofia'
 
 const navLinks = [
+  { href: '/',         label: 'Accueil' },
   { href: '/vente',    label: 'Vente' },
   { href: '/location', label: 'Location' },
   { href: '/autour',   label: 'Autour de moi' },
@@ -72,21 +73,24 @@ export default function Navbar() {
 
         {/* Nav desktop */}
         <nav className="hidden md:flex items-center gap-0.5">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
-                pathname?.startsWith(href)
-                  ? 'bg-primary-50 text-primary-500'
-                  : 'hover:bg-primary-50/60 hover:text-primary-500'
-              )}
-              style={{ color: pathname?.startsWith(href) ? '#8B1A2E' : '#7a5c3a' }}
-            >
-              {label}
-            </Link>
-          ))}
+          {navLinks.map(({ href, label }) => {
+            const active = href === '/' ? pathname === '/' : pathname?.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
+                  active
+                    ? 'bg-primary-50 text-primary-500'
+                    : 'hover:bg-primary-50/60 hover:text-primary-500'
+                )}
+                style={{ color: active ? '#8B1A2E' : '#7a5c3a' }}
+              >
+                {label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Actions desktop */}
@@ -173,16 +177,19 @@ export default function Navbar() {
       {/* Menu mobile */}
       {open && (
         <div className="md:hidden border-t border-primary-50 bg-white px-3 py-3 space-y-0.5 shadow-lg animate-fade-in">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary-50 min-h-[48px]"
-              style={{ color: pathname?.startsWith(href) ? '#8B1A2E' : '#1a0a00' }}
-            >
-              {label}
-            </Link>
-          ))}
+          {navLinks.map(({ href, label }) => {
+            const active = href === '/' ? pathname === '/' : pathname?.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-colors hover:bg-primary-50 min-h-[48px]"
+                style={{ color: active ? '#8B1A2E' : '#1a0a00' }}
+              >
+                {label}
+              </Link>
+            )
+          })}
           <div className="h-px my-2 mx-2" style={{ background: '#FAE8EC' }} />
           {user ? (
             <>
