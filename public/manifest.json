@@ -11,6 +11,12 @@
   "lang": "fr",
   "icons": [
     {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
@@ -35,22 +41,41 @@
       "purpose": "any"
     }
   ],
-  "categories": ["lifestyle", "business", "travel"],
   "shortcuts": [
     {
       "name": "Vente",
       "url": "/vente",
-      "description": "Biens à vendre"
+      "description": "Biens à vendre",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
       "name": "Location",
       "url": "/location",
-      "description": "Biens à louer"
+      "description": "Biens à louer",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
       "name": "Publier",
       "url": "/mon-espace/publier",
-      "description": "Publier une annonce"
+      "description": "Publier une annonce",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "LOFIA. sur mobile"
+    },
+    {
+      "src": "/screenshots/desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "LOFIA. sur desktop"
+    }
+  ],
+  "categories": ["lifestyle", "business", "travel"]
 }
