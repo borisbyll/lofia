@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
-  LayoutDashboard, Home, Heart, MessageSquare, MessageCircle,
+  LayoutDashboard, Home, Heart, MessageCircle,
   CalendarCheck, User, Plus, LogOut, ChevronRight,
-  Shield, Settings, Building2, Star,
+  Shield, Settings, Building2, Bell,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
@@ -45,20 +45,21 @@ function ModeToggle({ mode, setMode }: { mode: DashboardMode; setMode: (m: Dashb
 
 /* ── Nav items par mode ──────────────────────────────────────── */
 const navProprietaire = [
-  { href: '/mon-espace',              label: 'Vue d\'ensemble',  icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens',    label: 'Mes annonces',     icon: Home },
-  { href: '/mon-espace/reservations', label: 'Réservations',     icon: CalendarCheck },
-  { href: '/mon-espace/messages',     label: 'Messages',         icon: MessageSquare },
-  { href: '/mon-espace/messagerie',   label: 'Conversations',    icon: MessageCircle },
-  { href: '/mon-espace/profil',       label: 'Mon profil',       icon: User },
+  { href: '/mon-espace',                  label: 'Vue d\'ensemble',  icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens',        label: 'Mes annonces',     icon: Home },
+  { href: '/mon-espace/reservations',     label: 'Réservations',     icon: CalendarCheck },
+  { href: '/mon-espace/messagerie',       label: 'Conversations',    icon: MessageCircle },
+  { href: '/mon-espace/notifications',    label: 'Notifications',    icon: Bell },
+  { href: '/mon-espace/profil',           label: 'Mon profil',       icon: User },
 ]
 
 const navLocataire = [
-  { href: '/mon-espace',              label: 'Vue d\'ensemble',  icon: LayoutDashboard },
-  { href: '/mon-espace/reservations', label: 'Réservations',     icon: CalendarCheck },
-  { href: '/mon-espace/favoris',      label: 'Favoris',          icon: Heart },
-  { href: '/mon-espace/messagerie',   label: 'Messages',         icon: MessageCircle },
-  { href: '/mon-espace/profil',       label: 'Mon profil',       icon: User },
+  { href: '/mon-espace',                  label: 'Vue d\'ensemble',  icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',     label: 'Réservations',     icon: CalendarCheck },
+  { href: '/mon-espace/favoris',          label: 'Favoris',          icon: Heart },
+  { href: '/mon-espace/messagerie',       label: 'Conversations',    icon: MessageCircle },
+  { href: '/mon-espace/notifications',    label: 'Notifications',    icon: Bell },
+  { href: '/mon-espace/profil',           label: 'Mon profil',       icon: User },
 ]
 
 const modItems = [
@@ -75,19 +76,19 @@ const adminItems = [
 
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
 const bottomProprietaire = [
-  { href: '/mon-espace',              label: "Vue d'ensemble", icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens',    label: 'Annonces',       icon: Building2 },
-  { href: '/mon-espace/publier',      label: 'Publier',        icon: Plus, accent: true },
-  { href: '/mon-espace/reservations', label: 'Rés.',           icon: CalendarCheck },
-  { href: '/mon-espace/profil',       label: 'Profil',         icon: User },
+  { href: '/mon-espace',               label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens',     label: 'Annonces',       icon: Building2 },
+  { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
+  { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
+  { href: '/mon-espace/profil',        label: 'Profil',         icon: User },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',              label: "Vue d'ensemble", icon: LayoutDashboard },
-  { href: '/mon-espace/reservations', label: 'Réservations',   icon: CalendarCheck },
-  { href: '/mon-espace/publier',      label: 'Publier',        icon: Plus, accent: true },
-  { href: '/mon-espace/favoris',      label: 'Favoris',        icon: Heart },
-  { href: '/mon-espace/profil',       label: 'Profil',         icon: User },
+  { href: '/mon-espace',               label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',  label: 'Rés.',           icon: CalendarCheck },
+  { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
+  { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
+  { href: '/mon-espace/profil',        label: 'Profil',         icon: User },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
