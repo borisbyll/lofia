@@ -51,5 +51,13 @@ export default async function ProprietairePage({ params }: Props) {
     .eq('statut', 'publie')
     .order('created_at', { ascending: false })
 
-  return <ProprietaireClient profile={profile as any} biens={(biens as any) ?? []} />
+  const { data: avis } = await supabase
+    .from('avis')
+    .select('id, note, commentaire, created_at, auteur:profiles!auteur_id(nom, avatar_url), bien:biens!bien_id(titre, slug)')
+    .eq('proprietaire_id', params.id)
+    .eq('type', 'locataire_note_proprio')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return <ProprietaireClient profile={profile as any} biens={(biens as any) ?? []} avis={(avis as any) ?? []} />
 }

@@ -20,12 +20,22 @@ interface Profile {
   created_at: string
 }
 
+interface AvisItem {
+  id: string
+  note: number
+  commentaire: string | null
+  created_at: string
+  auteur: { nom: string; avatar_url: string | null } | null
+  bien: { titre: string; slug: string } | null
+}
+
 interface Props {
   profile: Profile
   biens: Bien[]
+  avis: AvisItem[]
 }
 
-export default function ProprietaireClient({ profile, biens }: Props) {
+export default function ProprietaireClient({ profile, biens, avis }: Props) {
   const [filter, setFilter] = useState<'all' | 'vente' | 'location'>('all')
 
   const filtered = filter === 'all' ? biens : biens.filter(b => b.categorie === filter)
@@ -140,6 +150,65 @@ export default function ProprietaireClient({ profile, biens }: Props) {
           </div>
         )}
       </div>
+
+      {/* Avis */}
+      {avis.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center gap-3 mb-5">
+            <h2 className="text-lg font-black text-gray-900">
+              Avis locataires
+            </h2>
+            <div className="flex items-center gap-1.5 bg-amber-50 rounded-xl px-3 py-1">
+              <Star size={14} className="text-amber-400 fill-amber-400" />
+              <span className="font-black text-gray-900 text-sm">{avgNote.toFixed(1)}</span>
+              <span className="text-xs text-gray-500">({avis.length})</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {avis.map(a => (
+              <div key={a.id} className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+                {/* Header avis */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 font-black text-primary-600 text-sm">
+                      {a.auteur?.avatar_url
+                        ? <img src={a.auteur.avatar_url} alt={a.auteur.nom} className="w-full h-full object-cover rounded-full" />
+                        : (a.auteur?.nom?.charAt(0) ?? 'A')}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{a.auteur?.nom ?? 'Locataire'}</p>
+                      <p className="text-xs text-gray-400">{formatDate(a.created_at)}</p>
+                    </div>
+                  </div>
+                  {/* Étoiles */}
+                  <div className="flex gap-0.5 shrink-0">
+                    {[1,2,3,4,5].map(n => (
+                      <Star key={n} size={13}
+                        fill={n <= a.note ? '#D4A832' : 'none'}
+                        style={{ color: n <= a.note ? '#D4A832' : '#d1d5db' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bien concerné */}
+                {a.bien && (
+                  <Link href={`/biens/${a.bien.slug}`}
+                    className="text-xs text-primary-500 hover:underline font-semibold truncate block">
+                    {a.bien.titre}
+                  </Link>
+                )}
+
+                {/* Commentaire */}
+                {a.commentaire && (
+                  <p className="text-sm text-gray-600 leading-relaxed">{a.commentaire}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

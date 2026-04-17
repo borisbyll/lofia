@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -18,6 +19,11 @@ import type { Bien, Avis } from '@/types/immobilier'
 import BienCard from '@/components/biens/BienCard'
 import ReservationPanel from './ReservationPanel'
 import SignalementModal from './SignalementModal'
+
+const MapApproximatif = dynamic(() => import('@/components/biens/MapApproximatif'), {
+  ssr: false,
+  loading: () => <div className="w-full rounded-2xl bg-gray-100 animate-pulse" style={{ height: 220 }} />,
+})
 
 interface Props {
   bien: Bien
@@ -232,15 +238,19 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 </div>
               )}
 
-              {/* Localisation masquée */}
-              <div className="bg-primary-50 border border-primary-200 rounded-2xl p-5 flex items-start gap-3">
-                <Lock size={16} className="text-primary-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-primary-700">Localisation approximative</p>
-                  <p className="text-xs text-primary-600 mt-0.5">
+              {/* Localisation approximative + carte */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <MapPin size={15} className="text-primary-500 shrink-0" />
+                  <h2 className="font-black text-gray-900 text-sm">Localisation</h2>
+                </div>
+                <MapApproximatif ville={bien.ville} commune={bien.commune} />
+                <div className="flex items-start gap-2.5 bg-primary-50 border border-primary-100 rounded-xl p-3">
+                  <Lock size={13} className="text-primary-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-primary-600 leading-relaxed">
                     {bien.categorie === 'location' && bien.type_location === 'courte_duree'
-                      ? "L'adresse exacte et les coordonnées GPS seront communiquées après confirmation de votre réservation et paiement."
-                      : `Le bien se situe à ${[bien.quartier, bien.ville].filter(Boolean).join(', ')}. Contactez le propriétaire pour plus de détails.`}
+                      ? "L'adresse exacte et les coordonnées GPS sont communiquées après confirmation de votre réservation et paiement."
+                      : `Le bien se situe à ${[bien.quartier, bien.commune, bien.ville].filter(Boolean).join(', ')}. Contactez le propriétaire pour l'adresse exacte.`}
                   </p>
                 </div>
               </div>
