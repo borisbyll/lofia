@@ -160,8 +160,8 @@ export default function DashboardAdminPage() {
               return (
                 <div key={f.label} className="bg-white/10 rounded-xl p-3">
                   <Icon size={14} className="text-white/60 mb-2" />
-                  <p className="text-xl font-black">{formatPrix(f.value)}</p>
-                  <p className="text-xs font-semibold text-white/80">{f.label}</p>
+                  <p className="text-base font-black leading-tight break-all">{formatPrix(f.value)}</p>
+                  <p className="text-xs font-semibold text-white/80 mt-0.5">{f.label}</p>
                   <p className="text-[10px] text-white/50 mt-0.5">{f.sub}</p>
                 </div>
               )

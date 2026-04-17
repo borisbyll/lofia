@@ -64,8 +64,8 @@ export default function DashboardModPage() {
     <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 lg:pb-8">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <Shield size={22} className="text-primary-500" />
-          <h1 className="text-2xl font-black text-gray-900">Tableau de bord modérateur</h1>
+          <Shield size={20} className="text-primary-500 shrink-0" />
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Dashboard modérateur</h1>
         </div>
         <p className="text-gray-500 text-sm">Bonjour {profile?.nom} — Gérez les annonces en attente</p>
       </div>
@@ -131,7 +131,8 @@ export default function DashboardModPage() {
                   </div>
                   <Link href={`/moderateur/biens/${bien.id}`}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary-50 text-primary-600 text-xs font-bold hover:bg-primary-100 transition-colors flex-shrink-0">
-                    <Eye size={13} /> Examiner
+                    <Eye size={13} />
+                    <span className="hidden sm:inline">Examiner</span>
                   </Link>
                 </div>
               )

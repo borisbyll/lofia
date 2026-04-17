@@ -156,7 +156,7 @@ export default function MessageriePage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] lg:h-[calc(100vh-2rem)]">
+    <div className="flex h-[calc(100vh-11rem)] lg:h-[calc(100vh-2rem)]">
       {/* Liste conversations */}
       <div className={cn(
         'bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto',

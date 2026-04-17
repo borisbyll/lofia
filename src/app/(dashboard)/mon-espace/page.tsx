@@ -159,23 +159,22 @@ export default function DashboardPage() {
     <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-6 pb-24 lg:pb-8">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-black" style={{ color: '#1a0a00' }}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-black" style={{ color: '#1a0a00' }}>
               {salut}, {prenom}
             </h1>
-            {/* Badge mode */}
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary-500 text-white">
-              Mode Propriétaire
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary-500 text-white whitespace-nowrap">
+              Propriétaire
             </span>
           </div>
           <p className="text-sm" style={{ color: '#7a5c3a' }}>
-            Mode Propriétaire — Résumé ce mois
+            Résumé de votre activité
           </p>
         </div>
         <Link href="/mon-espace/publier"
-          className="hidden sm:flex btn btn-primary gap-2 text-sm">
+          className="hidden sm:flex btn btn-primary gap-2 text-sm flex-shrink-0">
           <Plus size={15} /> Publier un bien
         </Link>
       </div>
@@ -228,29 +227,26 @@ export default function DashboardPage() {
             {annonces.map(a => {
               const badge = STATUT_BADGE[a.statut] ?? { label: a.statut, cls: 'badge-gray' }
               return (
-                <div key={a.id} className="flex items-center gap-3 px-5 py-3.5">
-                  {/* Badge catégorie */}
-                  <span className={cn('badge text-[10px] shrink-0', a.categorie === 'vente' ? 'badge-vente' : 'badge-longue')}>
-                    {a.categorie === 'vente' ? 'Vente' : 'Location'}
-                  </span>
-                  {/* Titre */}
+                <div key={a.id} className="flex items-center gap-3 px-4 py-3.5">
+                  {/* Titre + meta */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: '#1a0a00' }}>{a.titre}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#7a5c3a' }}>
-                      <span className="font-bold" style={{ color: '#8B1A2E' }}>{formatPrix(a.prix)}</span>
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className={cn('badge text-[10px]', a.categorie === 'vente' ? 'badge-vente' : 'badge-longue')}>
+                        {a.categorie === 'vente' ? 'Vente' : 'Location'}
+                      </span>
+                      <span className={cn('badge text-[10px]', badge.cls)}>{badge.label}</span>
+                      <span className="text-[11px] font-bold" style={{ color: '#8B1A2E' }}>{formatPrix(a.prix)}</span>
+                    </div>
                   </div>
-                  {/* Statut */}
-                  <span className={cn('badge text-[10px] shrink-0', badge.cls)}>{badge.label}</span>
                   {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <Link href={`/biens/${a.id}`}
-                      className="text-xs text-brun-doux hover:text-primary-500 font-medium transition-colors">
+                      className="text-xs text-brun-doux hover:text-primary-500 font-medium px-2 py-1 rounded-lg hover:bg-primary-50 transition-colors">
                       Voir
                     </Link>
-                    <span className="text-gray-300">·</span>
                     <Link href={`/mon-espace/mes-biens/${a.id}/modifier`}
-                      className="text-xs text-brun-doux hover:text-primary-500 font-medium transition-colors">
+                      className="text-xs text-brun-doux hover:text-primary-500 font-medium px-2 py-1 rounded-lg hover:bg-primary-50 transition-colors">
                       Modifier
                     </Link>
                   </div>
@@ -288,18 +284,17 @@ export default function DashboardPage() {
             {resasProp.map(r => {
               const badge = RESA_BADGE[r.statut] ?? { label: r.statut, cls: 'badge-gray' }
               return (
-                <div key={r.id} className="flex items-center gap-3 px-5 py-3.5">
+                <div key={r.id} className="flex items-center gap-3 px-4 py-3.5">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#1a0a00' }}>
-                        {(r.bien as any)?.titre ?? '—'}
-                      </p>
-                      <span className={cn('badge text-[10px] shrink-0', badge.cls)}>{badge.label}</span>
-                    </div>
-                    <p className="text-xs" style={{ color: '#7a5c3a' }}>
-                      {(r.locataire as any)?.nom ?? 'Locataire'} · {formatDate(r.date_debut)} – {formatDate(r.date_fin)}
-                      {nuits(r.date_debut, r.date_fin) && ` · ${nuits(r.date_debut, r.date_fin)}`}
+                    <p className="text-sm font-semibold truncate" style={{ color: '#1a0a00' }}>
+                      {(r.bien as any)?.titre ?? '—'}
                     </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className={cn('badge text-[10px]', badge.cls)}>{badge.label}</span>
+                      <span className="text-xs" style={{ color: '#7a5c3a' }}>
+                        {(r.locataire as any)?.nom ?? 'Locataire'} · {formatDate(r.date_debut)}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-sm font-black shrink-0" style={{ color: '#8B1A2E' }}>
                     {formatPrix(r.prix_total)}
@@ -340,13 +335,13 @@ export default function DashboardPage() {
     <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-6 pb-24 lg:pb-8">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-black" style={{ color: '#1a0a00' }}>
-              Mon espace
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-black" style={{ color: '#1a0a00' }}>
+              {salut}, {prenom}
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap"
               style={{ background: '#2D6A4F', color: '#fff' }}>
               Locataire
             </span>
@@ -354,7 +349,7 @@ export default function DashboardPage() {
           <p className="text-sm" style={{ color: '#7a5c3a' }}>Vos réservations et activités</p>
         </div>
         <Link href="/vente"
-          className="hidden sm:flex btn btn-outline gap-2 text-sm">
+          className="hidden sm:flex btn btn-outline gap-2 text-sm flex-shrink-0">
           Chercher un bien
         </Link>
       </div>
@@ -405,19 +400,18 @@ export default function DashboardPage() {
           <div className="divide-y divide-primary-50">
             {resasLoc.map(r => {
               const badge = RESA_BADGE[r.statut] ?? { label: r.statut, cls: 'badge-gray' }
-              const n = nuits(r.date_debut, r.date_fin)
               return (
-                <div key={r.id} className="flex items-center gap-3 px-5 py-3.5">
+                <div key={r.id} className="flex items-center gap-3 px-4 py-3.5">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#1a0a00' }}>
-                        {(r.bien as any)?.titre ?? '—'}
-                      </p>
-                      <span className={cn('badge text-[10px] shrink-0', badge.cls)}>{badge.label}</span>
-                    </div>
-                    <p className="text-xs" style={{ color: '#7a5c3a' }}>
-                      {formatDate(r.date_debut)} – {formatDate(r.date_fin)}{n ? ` · ${n}` : ''}
+                    <p className="text-sm font-semibold truncate" style={{ color: '#1a0a00' }}>
+                      {(r.bien as any)?.titre ?? '—'}
                     </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className={cn('badge text-[10px]', badge.cls)}>{badge.label}</span>
+                      <span className="text-xs" style={{ color: '#7a5c3a' }}>
+                        {formatDate(r.date_debut)} – {formatDate(r.date_fin)}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-black" style={{ color: '#8B1A2E' }}>

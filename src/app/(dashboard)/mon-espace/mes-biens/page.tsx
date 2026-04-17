@@ -175,7 +175,7 @@ export default function MesBiensPage() {
                         <MoreVertical size={16} />
                       </button>
                       {menuOpen === bien.id && (
-                        <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-gray-100 z-10 w-44 overflow-hidden">
+                        <div className="absolute right-0 top-9 bg-white rounded-xl shadow-xl border border-gray-100 z-10 w-44 overflow-hidden" style={{ zIndex: 20 }}>
                           <Link href={`/mon-espace/mes-biens/${bien.id}/modifier`}
                             onClick={() => setMenuOpen(null)}
                             className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
@@ -225,7 +225,7 @@ export default function MesBiensPage() {
 
       {/* Click outside to close menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[5]" onClick={() => setMenuOpen(null)} />
+        <div className="fixed inset-0 z-[9]" onClick={() => setMenuOpen(null)} />
       )}
     </div>
   )

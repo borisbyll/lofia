@@ -133,9 +133,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Avatar + infos utilisateur */}
         <div className="px-4 py-4 border-b border-primary-50">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm">
+            <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm overflow-hidden">
               {profile?.avatar_url
-                ? <Image src={profile.avatar_url} alt={profile.nom ?? ''} fill className="rounded-full object-cover" sizes="40px" />
+                ? <Image src={profile.avatar_url} alt={profile.nom ?? ''} fill className="object-cover" sizes="40px" />
                 : initiales
               }
             </div>
