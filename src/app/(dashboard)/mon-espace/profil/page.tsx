@@ -1,14 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { User, Phone, Mail, Globe, Camera, Shield, CheckCircle, Loader2, Upload } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { User, Phone, Mail, Globe, Camera, Shield, CheckCircle, Loader2, Upload, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
 
 export default function ProfilPage() {
-  const { user, profile, loadProfile } = useAuthStore()
+  const { user, profile, loadProfile, logout } = useAuthStore()
+  const router = useRouter()
   const [nom,       setNom]       = useState('')
   const [phone,     setPhone]     = useState('')
   const [bio,       setBio]       = useState('')
@@ -286,6 +288,16 @@ export default function ProfilPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Déconnexion — visible uniquement sur mobile (lg: bouton dans la sidebar) */}
+      <div className="lg:hidden bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <button
+          onClick={async () => { await logout(); router.push('/') }}
+          className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors border border-red-100">
+          <LogOut size={16} />
+          Se déconnecter
+        </button>
       </div>
     </div>
   )
