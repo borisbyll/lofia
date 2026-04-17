@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Star, CheckCircle, Home, Globe, Calendar,
@@ -57,7 +58,7 @@ export default function ProprietaireClient({ profile, biens, avis }: Props) {
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl bg-primary-100 overflow-hidden flex items-center justify-center">
               {profile.avatar_url
-                ? <img src={profile.avatar_url} alt={profile.nom} className="w-full h-full object-cover" />
+                ? <Image src={profile.avatar_url} alt={profile.nom} fill className="object-cover" sizes="96px" />
                 : <span className="text-3xl font-black text-primary-400">{profile.nom?.charAt(0) ?? '?'}</span>
               }
             </div>
@@ -173,7 +174,7 @@ export default function ProprietaireClient({ profile, biens, avis }: Props) {
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 font-black text-primary-600 text-sm">
                       {a.auteur?.avatar_url
-                        ? <img src={a.auteur.avatar_url} alt={a.auteur.nom} className="w-full h-full object-cover rounded-full" />
+                        ? <Image src={a.auteur.avatar_url} alt={a.auteur.nom} fill className="object-cover rounded-full" sizes="36px" />
                         : (a.auteur?.nom?.charAt(0) ?? 'A')}
                     </div>
                     <div>

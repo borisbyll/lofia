@@ -369,11 +369,13 @@ export default function ReservationsPage() {
     const [resProp, resLoc] = await Promise.all([
       supabase.from('reservations').select(baseSelect)
         .eq('proprietaire_id', user!.id)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(50),
       supabase.from('reservations').select(baseSelect)
         .eq('locataire_id', user!.id)
         .neq('proprietaire_id', user!.id)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(50),
     ])
 
     if (resProp.error || resLoc.error) toast.error('Erreur de chargement')

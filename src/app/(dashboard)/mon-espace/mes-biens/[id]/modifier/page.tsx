@@ -34,7 +34,7 @@ export default function EditBienPage() {
   const loadBien = async () => {
     const { data, error } = await supabase
       .from('biens')
-      .select('*')
+      .select('id, titre, description, prix, ville, commune, adresse, quartier, prix_negociable, superficie, nb_pieces, nb_chambres, nb_salles_bain, equipements, photos, photo_principale')
       .eq('id', bienId)
       .eq('owner_id', user!.id)
       .single()
@@ -49,14 +49,14 @@ export default function EditBienPage() {
       commune:       data.commune ?? '',
       adresse:       data.adresse ?? '',
       quartier:      data.quartier ?? '',
-      meuble:        data.meuble ?? false,
+      meuble:        false,
       prix_negociable: data.prix_negociable ?? false,
-      surface:       String(data.surface ?? ''),
+      surface:       String(data.superficie ?? ''),
       nb_pieces:     String(data.nb_pieces ?? ''),
       nb_chambres:   String(data.nb_chambres ?? ''),
-      nb_sdb:        String(data.nb_sdb ?? ''),
+      nb_sdb:        String(data.nb_salles_bain ?? ''),
       equipements:   data.equipements ?? [],
-      video_url:     data.video_url ?? '',
+      video_url:     '',
     })
     setPhotos(data.photos ?? [])
     setLoading(false)

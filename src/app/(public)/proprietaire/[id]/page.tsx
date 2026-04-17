@@ -50,6 +50,7 @@ export default async function ProprietairePage({ params }: Props) {
     .eq('owner_id', params.id)
     .eq('statut', 'publie')
     .order('created_at', { ascending: false })
+    .limit(50)
 
   const { data: avis } = await supabase
     .from('avis')

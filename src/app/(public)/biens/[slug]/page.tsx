@@ -63,28 +63,29 @@ export default async function BienDetailPage({ params }: Props) {
   const bien = await getBien(params.slug)
   if (!bien) notFound()
 
-  // Incrémenter les vues via RPC (atomic, bypass RLS)
   const supabase = await createClient()
-  supabase.rpc('increment_vues', { p_bien_id: bien.id }).then(() => {})
 
-  // Charger avis
-  const { data: avis } = await supabase
-    .from('avis')
-    .select('*, auteur:profiles!auteur_id(nom,avatar_url)')
-    .eq('bien_id', bien.id)
-    .eq('type', 'locataire_note_proprio')
-    .order('created_at', { ascending: false })
-    .limit(10)
+  // Incrémenter les vues (fire-and-forget)
+  void supabase.rpc('increment_vues', { p_bien_id: bien.id })
 
-  // Biens similaires
-  const { data: similaires } = await supabase
-    .from('biens')
-    .select('*, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
-    .eq('statut', 'publie')
-    .eq('categorie', bien.categorie)
-    .eq('ville', bien.ville)
-    .neq('id', bien.id)
-    .limit(4)
+  // Avis + similaires en parallèle
+  const [{ data: avis }, { data: similaires }] = await Promise.all([
+    supabase
+      .from('avis')
+      .select('id, note, commentaire, created_at, auteur:profiles!auteur_id(nom,avatar_url)')
+      .eq('bien_id', bien.id)
+      .eq('type', 'locataire_note_proprio')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('biens')
+      .select('id, slug, titre, categorie, type_bien, type_location, prix, prix_type, ville, commune, photos, photo_principale, vues, favoris_count, statut, created_at, owner_id, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
+      .eq('statut', 'publie')
+      .eq('categorie', bien.categorie)
+      .eq('ville', bien.ville)
+      .neq('id', bien.id)
+      .limit(4),
+  ])
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -113,7 +114,7 @@ export default async function BienDetailPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BienDetailClient bien={bien} avis={avis || []} similaires={similaires as Bien[] || []} />
+      <BienDetailClient bien={bien} avis={(avis || []) as any} similaires={(similaires || []) as unknown as Bien[]} />
     </>
   )
 }

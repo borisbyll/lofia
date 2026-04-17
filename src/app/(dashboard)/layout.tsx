@@ -8,6 +8,7 @@ import {
   CalendarCheck, User, Plus, LogOut, ChevronRight,
   Shield, Settings, Building2, Star,
 } from 'lucide-react'
+import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
 import { useDashboardMode, type DashboardMode } from '@/store/dashboardModeStore'
 import NotifBell from '@/components/layout/NotifBell'
@@ -134,7 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm">
               {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                ? <Image src={profile.avatar_url} alt={profile.nom ?? ''} fill className="rounded-full object-cover" sizes="40px" />
                 : initiales
               }
             </div>

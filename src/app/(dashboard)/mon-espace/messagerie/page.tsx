@@ -62,6 +62,7 @@ export default function MessageriePage() {
       `)
       .or(`proprietaire_id.eq.${user!.id},locataire_id.eq.${user!.id}`)
       .order('created_at', { ascending: false })
+      .limit(50)
 
     if (!convs) { setLoading(false); return }
 
@@ -104,6 +105,7 @@ export default function MessageriePage() {
       .select('id, contenu, sender_id, created_at, lu')
       .eq('conversation_id', conv.id)
       .order('created_at', { ascending: true })
+      .limit(100)
     setMessages((data as any) ?? [])
 
     // Marquer comme lus
