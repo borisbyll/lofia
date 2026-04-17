@@ -6,11 +6,12 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Home, Heart, MessageCircle,
   CalendarCheck, User, Plus, LogOut, ChevronRight,
-  Shield, Settings, Building2, Bell,
+  Shield, Settings, Building2, Bell, ArrowLeft,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
 import { useDashboardMode, type DashboardMode } from '@/store/dashboardModeStore'
+import { supabase } from '@/lib/supabase/client'
 import NotifBell from '@/components/layout/NotifBell'
 import { cn } from '@/lib/utils'
 import { LogoLofia } from '@/components/lofia/LogoLofia'
@@ -75,20 +76,21 @@ const adminItems = [
 ]
 
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
+// Profil accessible via avatar dans le header mobile → libère 1 slot
 const bottomProprietaire = [
-  { href: '/mon-espace',               label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: '/mon-espace',               label: "Accueil",        icon: LayoutDashboard },
   { href: '/mon-espace/mes-biens',     label: 'Annonces',       icon: Building2 },
   { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
   { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
-  { href: '/mon-espace/profil',        label: 'Profil',         icon: User },
+  { href: '/mon-espace/notifications', label: 'Alertes',        icon: Bell },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',               label: "Vue d'ensemble", icon: LayoutDashboard },
-  { href: '/mon-espace/reservations',  label: 'Rés.',           icon: CalendarCheck },
+  { href: '/mon-espace',               label: "Accueil",        icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',  label: 'Réservations',   icon: CalendarCheck },
   { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
   { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
-  { href: '/mon-espace/profil',        label: 'Profil',         icon: User },
+  { href: '/mon-espace/notifications', label: 'Alertes',        icon: Bell },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -96,11 +98,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const { user, profile, role, loading, logout } = useAuthStore()
   const { mode, setMode } = useDashboardMode()
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [userMenuOpen,  setUserMenuOpen]  = useState(false)
+  const [unreadNotifs,  setUnreadNotifs]  = useState(0)
 
   useEffect(() => {
     if (!loading && !user) router.replace('/connexion?next=' + pathname)
   }, [loading, user, pathname, router])
+
+  // Compteur notifications non lues (pour badge bottom nav)
+  useEffect(() => {
+    if (!user) return
+    const load = async () => {
+      const { count } = await supabase
+        .from('notifications').select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id).eq('lu', false)
+      setUnreadNotifs(count ?? 0)
+    }
+    load()
+  }, [user, pathname]) // rafraîchit à chaque nav (ex. après avoir lu les notifs)
 
   if (loading || !user) return (
     <div className="min-h-screen flex items-center justify-center bg-cream">
@@ -213,6 +228,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Plus size={15} />
             Publier une annonce
           </Link>
+          <Link href="/"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brun-doux hover:bg-primary-50 hover:text-primary-600 transition-colors">
+            <ArrowLeft size={15} />
+            Retour à l&apos;accueil
+          </Link>
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-brun-doux hover:bg-red-50 hover:text-red-500 transition-colors">
             <LogOut size={15} />
@@ -242,11 +262,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {userMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-xl border border-gray-100 z-50 w-48 overflow-hidden">
+                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-xl border border-gray-100 z-50 w-52 overflow-hidden">
+                    {/* Nom utilisateur */}
+                    <div className="px-4 py-2.5 border-b border-gray-100">
+                      <p className="text-xs font-black text-gray-900 truncate">{profile?.nom}</p>
+                      <p className="text-[10px] text-gray-400 capitalize">{role || 'utilisateur'}</p>
+                    </div>
                     <Link href="/mon-espace/profil"
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
-                      <User size={14} /> Mon profil
+                      <User size={14} className="text-gray-400" /> Mon profil
+                    </Link>
+                    <Link href="/mon-espace/reservations"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                      <CalendarCheck size={14} className="text-gray-400" /> Réservations
+                    </Link>
+                    <Link href="/"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                      <ArrowLeft size={14} className="text-gray-400" /> Retour à l&apos;accueil
                     </Link>
                     <div className="border-t border-gray-100" />
                     <button
@@ -307,6 +342,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span className="text-[10px] font-semibold text-primary-500">{item.label}</span>
                 </Link>
               )
+              const isNotif = item.href === '/mon-espace/notifications'
               return (
                 <Link key={item.href} href={item.href}
                   className={cn(
@@ -314,10 +350,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     active ? 'text-primary-500' : 'text-brun-doux'
                   )}>
                   <div className={cn(
-                    'w-8 h-8 rounded-xl flex items-center justify-center transition-all',
+                    'relative w-8 h-8 rounded-xl flex items-center justify-center transition-all',
                     active ? 'bg-primary-50' : ''
                   )}>
                     <Icon size={19} strokeWidth={active ? 2.5 : 2} />
+                    {isNotif && unreadNotifs > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center">
+                        {unreadNotifs > 9 ? '9+' : unreadNotifs}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[9px] font-semibold text-center leading-tight w-full truncate">
                     {item.label}
