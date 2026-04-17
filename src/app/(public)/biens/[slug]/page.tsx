@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import BienDetailClient from './BienDetailClient'
 import type { Bien } from '@/types/immobilier'
+import { BRAND } from '@/lib/brand'
+import { formatPrix } from '@/lib/utils'
 
 interface Props { params: { slug: string } }
 
@@ -20,12 +22,39 @@ async function getBien(slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const bien = await getBien(params.slug)
   if (!bien) return { title: 'Bien non trouvé' }
+
+  const baseUrl = `https://${BRAND.domaine}`
+  const url = `${baseUrl}/biens/${bien.slug}`
+  const prixFormate = formatPrix(bien.prix)
+  const suffix = bien.categorie === 'location'
+    ? (bien.type_location === 'courte_duree' ? '/nuit' : '/mois')
+    : ''
+  const localisation = [bien.quartier, bien.ville].filter(Boolean).join(', ')
+  const description = bien.description?.slice(0, 155)
+    || `${bien.type_bien} à ${localisation} — ${prixFormate}${suffix}`
+  const ogTitle = `${bien.titre} — ${prixFormate}${suffix}`
+  const images = bien.photo_principale
+    ? [{ url: bien.photo_principale, width: 1200, height: 630, alt: bien.titre }]
+    : []
+
   return {
     title: bien.titre,
-    description: bien.description?.slice(0, 160) || `${bien.type_bien} à ${bien.ville}`,
+    description,
+    alternates: { canonical: url },
     openGraph: {
-      title: bien.titre,
-      images: bien.photo_principale ? [bien.photo_principale] : [],
+      title: ogTitle,
+      description,
+      url,
+      siteName: BRAND.name,
+      images,
+      locale: 'fr_TG',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: ogTitle,
+      description,
+      images: images.map(i => i.url),
     },
   }
 }
@@ -57,5 +86,34 @@ export default async function BienDetailPage({ params }: Props) {
     .neq('id', bien.id)
     .limit(4)
 
-  return <BienDetailClient bien={bien} avis={avis || []} similaires={similaires as Bien[] || []} />
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: bien.titre,
+    description: bien.description || undefined,
+    url: `https://${BRAND.domaine}/biens/${bien.slug}`,
+    image: bien.photo_principale || undefined,
+    offers: {
+      '@type': 'Offer',
+      price: bien.prix,
+      priceCurrency: 'XOF',
+      availability: 'https://schema.org/InStock',
+    },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: bien.ville,
+      addressCountry: 'TG',
+      streetAddress: [bien.quartier, bien.commune].filter(Boolean).join(', ') || undefined,
+    },
+  }
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <BienDetailClient bien={bien} avis={avis || []} similaires={similaires as Bien[] || []} />
+    </>
+  )
 }

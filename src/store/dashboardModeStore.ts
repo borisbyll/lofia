@@ -18,6 +18,6 @@ export const useDashboardMode = create<DashboardModeState>()(
       setMode: (mode) => set({ mode }),
       toggle: () => set({ mode: get().mode === 'proprietaire' ? 'locataire' : 'proprietaire' }),
     }),
-    { name: 'dome-dashboard-mode' }
+    { name: 'lofia-dashboard-mode' }
   )
 )

@@ -7,9 +7,23 @@ interface Props { params: { id: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createServerClient()
-  const { data } = await supabase.from('profiles').select('nom').eq('id', params.id).single()
+  const { data } = await supabase
+    .from('profiles')
+    .select('nom, bio')
+    .eq('id', params.id)
+    .single()
+  if (!data) return { title: 'Propriétaire — LOFIA.' }
+  const description = data.bio?.slice(0, 155) || `Consultez les biens publiés par ${data.nom} sur LOFIA., la plateforme immobilière du Togo.`
   return {
-    title: data?.nom ? `${data.nom} — Propriétaire` : 'Propriétaire',
+    title: `${data.nom} — Propriétaire`,
+    description,
+    openGraph: {
+      title: `${data.nom} — Propriétaire sur LOFIA.`,
+      description,
+      siteName: 'LOFIA.',
+      locale: 'fr_TG',
+      type: 'profile',
+    },
   }
 }
 

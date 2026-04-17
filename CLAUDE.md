@@ -22,7 +22,7 @@ Stack : **Next.js 14.2.29** + React 18.3.1 + TypeScript 5.6 + **Tailwind CSS v3.
 - **Logo** : cercle bordeaux + double anneau doré + trou de serrure blanc — voir composant `LogoLofia`
 - **Favicon** : même icône serrure — `public/favicon.svg` et `public/icons/icon.svg` ✅ mis à jour
 - **manifest.json** : ✅ mis à jour (name: "LOFIA. — Immobilier Togo", theme_color: #8B1A2E)
-- ⚠️ `package.json` name encore "boris-immo" — à mettre à jour
+- ✅ `package.json` name → "lofia-immo" mis à jour
 
 ## 3. Deux catégories principales
 1. **VENTE** (terrains, maisons, villas, immeubles, local commercial) → soumission + approbation modérateur
@@ -100,7 +100,7 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 | `next.config.mjs` | Config Next.js — images remotePatterns + security headers (X-Frame-Options, HSTS, etc.) |
 | `supabase/migrations/` | 9 fichiers SQL |
 | `public/manifest.json` | PWA manifest — ⚠️ contient encore "Boris Immo" — à mettre à jour |
-| `public/sw.js` | Service Worker — Network First strategy (CACHE_NAME: 'dome-immo-v1') |
+| `public/sw.js` | Service Worker — Network First strategy (CACHE_NAME: 'lofia-immo-v1') |
 
 ## 10. État d'avancement — ✅ TOUT COMPLÉTÉ
 
@@ -109,7 +109,7 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 - Design system complet (`globals.css` avec classes utilitaires Dôme)
 - Supabase client/server (@supabase/ssr 0.5.2 + @supabase/supabase-js 2.101.1)
 - Middleware auth (cookie sync + routes protégées)
-- Zustand stores : `authStore` + `dashboardModeStore` (persisté localStorage `dome-dashboard-mode`)
+- Zustand stores : `authStore` + `dashboardModeStore` (persisté localStorage `lofia-dashboard-mode`)
 - Types TypeScript complets (`src/types/immobilier.ts`)
 - PWA : manifest.json + sw.js + SwRegister
 - `TYPES_PAR_CATEGORIE` dans constants.ts (Record<string, string[]>)
@@ -198,7 +198,7 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - **`Array.from(new Set(...))`** au lieu de `[...new Set(...)]` (TS sans downlevelIteration)
 - **Apostrophes JSX** : utiliser `&apos;` ou double quotes `"l'adresse"` (pas de guillemets simples dans JSX string literals)
 - **`next.config.mjs`** : extension obligatoire (Next.js 14.2.29 ne supporte pas `.ts`)
-- **Dashboard mode** : persisté dans localStorage via Zustand persist (`dome-dashboard-mode`)
+- **Dashboard mode** : persisté dans localStorage via Zustand persist (`lofia-dashboard-mode`)
 
 ## 12. Sécurité — état final
 - 0 alertes critiques corrigeables
@@ -212,10 +212,10 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - [x] ~~Mettre à jour `public/manifest.json`~~ → "LOFIA. — Immobilier Togo", theme_color #8B1A2E ✅
 - [x] ~~Mettre à jour favicon et icône PWA~~ → `public/favicon.svg` + `public/icons/icon.svg` ✅
 - [x] ~~Mettre à jour `src/lib/brand.ts`~~ → name: 'LOFIA.', logo: '/icons/icon.svg' ✅
-- [ ] Intégrer `LogoLofia` dans Navbar, Footer, Dashboard layout (remplacer tout texte "Dôme"/"LOFIA" brut)
+- [x] ~~Intégrer `LogoLofia` dans Navbar, Footer, Dashboard layout~~ → ✅ intégré dans les 3 (Navbar l.71, Footer l.18, Dashboard layout l.129+226)
 - [ ] Appliquer intégralement le design system (section 15) sur toutes les pages existantes
-- [ ] Mettre à jour `package.json` : name → "lofia-immo"
-- [ ] Remplacer toutes les occurrences de `boris-immo` / `Dôme` par `LOFIA.` dans le code restant
+- [x] ~~Mettre à jour `package.json` : name → "lofia-immo"~~ → ✅ mis à jour
+- [ ] Remplacer résidus "Dôme" dans commentaires : `globals.css` (4 occurrences), `tailwind.config.ts` (1 occurrence)
 - [ ] Intégration FedaPay réelle (remplacer sandbox — clés prod disponibles)
 - [ ] Système d'avis/reviews UI sur ProprietairePage (table `avis` existe, AvisModal existe)
 - [ ] Page `/recherche` globale cross-catégories
@@ -471,5 +471,5 @@ Charts admin      — Recharts
 
 ---
 
-*LOFIA. — CLAUDE.md v4.0 — Mise à jour brand (logo + nom) — Avril 2026*
+*LOFIA. — CLAUDE.md v4.1 — Synchronisation état réel (localStorage, LogoLofia intégré, package.json) — Avril 2026*
 *Ce fichier remplace tous les fichiers CLAUDE.md précédents.*
