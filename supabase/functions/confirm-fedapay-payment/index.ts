@@ -116,20 +116,22 @@ Deno.serve(async (req) => {
     const bien = resa.bien as any
     const fmt  = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' })
 
+    // Notifier le locataire : réservation confirmée
     await supabase.from('notifications').insert({
       user_id: user.id,
-      type:    'paiement',
-      titre:   'Paiement confirmé',
-      corps:   `Votre réservation pour "${bien?.titre}" est confirmée. Confirmez votre arrivée le ${fmt(resa.date_debut)}.`,
+      type:    'reservation_confirmee',
+      titre:   '✅ Réservation confirmée',
+      corps:   `Votre réservation pour "${bien?.titre}" est confirmée. Pensez à confirmer votre arrivée le ${fmt(resa.date_debut)}.`,
       lien:    '/mon-espace/reservations',
     })
 
+    // Notifier le propriétaire : paiement reçu en séquestre
     if (resa.proprietaire_id) {
       await supabase.from('notifications').insert({
         user_id: resa.proprietaire_id,
-        type:    'paiement',
-        titre:   'Paiement reçu — séquestre',
-        corps:   `La réservation pour "${bien?.titre}" (${fmt(resa.date_debut)} → ${fmt(resa.date_fin)}) a été payée.`,
+        type:    'paiement_recu',
+        titre:   '💰 Paiement reçu — en séquestre',
+        corps:   `Le paiement pour "${bien?.titre}" (${fmt(resa.date_debut)} → ${fmt(resa.date_fin)}) a été reçu. Les fonds seront libérés 24h après l'arrivée.`,
         lien:    '/mon-espace/reservations',
       })
     }

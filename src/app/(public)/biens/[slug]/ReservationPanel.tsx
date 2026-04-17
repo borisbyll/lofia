@@ -84,6 +84,16 @@ export default function ReservationPanel({ bien }: Props) {
       }).select('id').single()
 
       if (error) throw error
+
+      // Notifier le propriétaire de la nouvelle réservation
+      await supabase.from('notifications').insert({
+        user_id: bien.owner_id,
+        type:    'reservation_nouvelle',
+        titre:   '🏠 Nouvelle réservation',
+        corps:   `Une réservation a été créée pour "${bien.titre}" du ${new Date(debut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' })} au ${new Date(fin).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}.`,
+        lien:    '/mon-espace/reservations',
+      })
+
       toast.success('Réservation créée ! Procédez au paiement.')
       router.push(`/mon-espace/paiement/${data.id}`)
     } catch {

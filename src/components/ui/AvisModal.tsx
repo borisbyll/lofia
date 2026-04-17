@@ -48,6 +48,15 @@ export default function AvisModal({ reservationId, bienId, bienTitre, proprietai
         return
       }
 
+      // Notifier le propriétaire de l'avis reçu
+      await supabase.from('notifications').insert({
+        user_id: proprietaireId,
+        type:    'avis_nouveau',
+        titre:   '⭐ Nouvel avis reçu',
+        corps:   `Vous avez reçu un avis de ${note} étoile${note > 1 ? 's' : ''} pour "${bienTitre}".`,
+        lien:    '/mon-espace',
+      })
+
       toast.success('Avis publié, merci !')
       onSuccess()
       onClose()

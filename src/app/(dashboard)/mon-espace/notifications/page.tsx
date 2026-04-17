@@ -9,17 +9,25 @@ import { cn, formatRelative } from '@/lib/utils'
 import type { Notification } from '@/types/immobilier'
 
 const ICON_BY_TYPE: Record<string, string> = {
+  // Réservations
   reservation_nouvelle:      '🏠',
   reservation_confirmee:     '✅',
   reservation_annulee:       '❌',
+  reservation:               '🏠',   // type DB (confirmer_arrivee trigger)
+  // Paiements
   paiement_recu:             '💰',
+  liberation_fonds:          '💸',
+  paiement:                  '💰',   // type DB legacy (liberer_fonds + confirm-fedapay)
+  // Biens
   bien_approuve:             '✅',
   bien_rejete:               '❌',
   bien_signale:              '🚨',
+  signalement:               '🚨',   // type DB (auto-suspend trigger)
+  // Messages & avis
   message_nouveau:           '💬',
   avis_nouveau:              '⭐',
+  // Identité
   identite_verifiee:         '🛡️',
-  liberation_fonds:          '💸',
 }
 
 function notifIcon(type: string) {

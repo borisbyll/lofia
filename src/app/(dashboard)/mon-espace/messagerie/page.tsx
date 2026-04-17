@@ -27,7 +27,7 @@ interface Message {
 }
 
 export default function MessageriePage() {
-  const { user } = useAuthStore()
+  const { user, profile } = useAuthStore()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConv,    setActiveConv]    = useState<Conversation | null>(null)
   const [messages,      setMessages]      = useState<Message[]>([])
@@ -141,16 +141,26 @@ export default function MessageriePage() {
     e.preventDefault()
     if (!newMsg.trim() || !activeConv) return
     setSending(true)
+    const contenu = newMsg.trim()
     const { error } = await supabase.from('conversation_messages').insert({
       conversation_id: activeConv.id,
       sender_id: user!.id,
-      contenu: newMsg.trim(),
+      contenu,
     })
     if (!error) {
       setNewMsg('')
       setConversations(prev => prev.map(c =>
-        c.id === activeConv.id ? { ...c, dernierMessage: newMsg.trim(), dernierAt: new Date().toISOString() } : c
+        c.id === activeConv.id ? { ...c, dernierMessage: contenu, dernierAt: new Date().toISOString() } : c
       ))
+      // Notifier le destinataire (l'autre personne dans la conversation)
+      const senderName = profile?.nom?.split(' ')[0] ?? 'Quelqu\'un'
+      await supabase.from('notifications').insert({
+        user_id: activeConv.autre_user_id,
+        type:    'message_nouveau',
+        titre:   '💬 Nouveau message',
+        corps:   `${senderName} vous a envoyé un message${activeConv.bien_titre ? ` concernant "${activeConv.bien_titre}"` : ''}.`,
+        lien:    '/mon-espace/messagerie',
+      })
     }
     setSending(false)
   }
