@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -75,19 +75,19 @@ const adminItems = [
 
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
 const bottomProprietaire = [
-  { href: '/mon-espace',              label: 'Accueil',      icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens',    label: 'Annonces',     icon: Building2 },
-  { href: '/mon-espace/publier',      label: 'Publier',      icon: Plus, accent: true },
-  { href: '/mon-espace/reservations', label: 'Rés.',         icon: CalendarCheck },
-  { href: '/mon-espace/profil',       label: 'Profil',       icon: User },
+  { href: '/mon-espace',              label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens',    label: 'Annonces',       icon: Building2 },
+  { href: '/mon-espace/publier',      label: 'Publier',        icon: Plus, accent: true },
+  { href: '/mon-espace/reservations', label: 'Rés.',           icon: CalendarCheck },
+  { href: '/mon-espace/profil',       label: 'Profil',         icon: User },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',              label: 'Accueil',      icon: LayoutDashboard },
-  { href: '/mon-espace/reservations', label: 'Réservations', icon: CalendarCheck },
-  { href: '/mon-espace/publier',      label: 'Publier',      icon: Plus, accent: true },
-  { href: '/mon-espace/favoris',      label: 'Favoris',      icon: Heart },
-  { href: '/mon-espace/profil',       label: 'Profil',       icon: User },
+  { href: '/mon-espace',              label: "Vue d'ensemble", icon: LayoutDashboard },
+  { href: '/mon-espace/reservations', label: 'Réservations',   icon: CalendarCheck },
+  { href: '/mon-espace/publier',      label: 'Publier',        icon: Plus, accent: true },
+  { href: '/mon-espace/favoris',      label: 'Favoris',        icon: Heart },
+  { href: '/mon-espace/profil',       label: 'Profil',         icon: User },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -95,6 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const { user, profile, role, loading, logout } = useAuthStore()
   const { mode, setMode } = useDashboardMode()
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) router.replace('/connexion?next=' + pathname)
@@ -227,11 +228,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/"><LogoLofia variant="dark" className="text-xl" /></Link>
           <div className="flex items-center gap-2">
             <NotifBell />
-            <Link href="/mon-espace/publier"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-500 text-white text-xs font-bold hover:bg-primary-600 transition-colors">
-              <Plus size={13} />
-              Publier
-            </Link>
+            {/* Avatar utilisateur → profil + déconnexion */}
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(v => !v)}
+                className="relative w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-black text-xs shadow-sm overflow-hidden">
+                {profile?.avatar_url
+                  ? <Image src={profile.avatar_url} alt={profile?.nom ?? ''} fill className="object-cover" sizes="32px" />
+                  : initiales
+                }
+              </button>
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-xl border border-gray-100 z-50 w-48 overflow-hidden">
+                    <Link href="/mon-espace/profil"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                      <User size={14} /> Mon profil
+                    </Link>
+                    <div className="border-t border-gray-100" />
+                    <button
+                      onClick={() => { setUserMenuOpen(false); handleLogout() }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+                      <LogOut size={14} /> Se déconnecter
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
@@ -284,7 +309,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               return (
                 <Link key={item.href} href={item.href}
                   className={cn(
-                    'flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors',
+                    'flex flex-col items-center justify-center gap-0.5 transition-colors px-0.5',
                     active ? 'text-primary-500' : 'text-brun-doux'
                   )}>
                   <div className={cn(
@@ -293,7 +318,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   )}>
                     <Icon size={19} strokeWidth={active ? 2.5 : 2} />
                   </div>
-                  {item.label}
+                  <span className="text-[9px] font-semibold text-center leading-tight w-full truncate">
+                    {item.label}
+                  </span>
                 </Link>
               )
             })}
