@@ -213,18 +213,12 @@ export default function Navbar() {
                 <Plus size={16} /> Publier un bien
               </Link>
               <Link
-                href="/mon-espace"
+                href="/mon-espace/profil"
                 className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold hover:bg-primary-50 transition-colors min-h-[48px]"
                 style={{ color: '#1a0a00' }}
               >
-                <LayoutDashboard size={16} style={{ color: '#7a5c3a' }} /> Mon espace
+                <User size={16} style={{ color: '#7a5c3a' }} /> Mon profil
               </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors min-h-[48px]"
-              >
-                <LogOut size={16} /> Déconnexion
-              </button>
             </>
           ) : (
             <div className="flex flex-col gap-2.5 px-1 pt-1 pb-2">
