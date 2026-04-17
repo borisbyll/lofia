@@ -21,8 +21,10 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // getUser() valide le token côté serveur (pas getSession() qui lit localStorage)
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession() lit le JWT depuis le cookie sans appel réseau → navigation instantanée
+  // getUser() ferait un aller-retour Supabase à chaque navigation (latence élevée)
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   const pathname = request.nextUrl.pathname
 
