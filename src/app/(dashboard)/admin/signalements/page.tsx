@@ -69,7 +69,7 @@ export default function AdminSignalementsPage() {
   const nonTraites = signalements.filter(s => !s.traite).length
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full pb-24 lg:pb-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900">Signalements</h1>
         {nonTraites > 0 && (

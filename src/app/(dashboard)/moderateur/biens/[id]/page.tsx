@@ -86,7 +86,7 @@ export default function ReviewBienPage() {
   const propData = bien.proprietaire ?? {}
 
   return (
-    <div className="p-4 lg:p-8 max-w-4xl mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-4xl mx-auto w-full pb-24 lg:pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600">

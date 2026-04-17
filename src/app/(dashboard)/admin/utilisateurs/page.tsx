@@ -90,7 +90,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-4 lg:p-8 max-w-6xl mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-6xl mx-auto w-full pb-24 lg:pb-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900">Utilisateurs</h1>
         <p className="text-sm text-gray-500 mt-0.5">{users.length} comptes enregistrés</p>

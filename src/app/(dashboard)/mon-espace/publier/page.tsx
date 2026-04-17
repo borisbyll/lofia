@@ -206,7 +206,7 @@ export default function PublierBienPage() {
   const progress = (etape / 4) * 100
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto pb-32 lg:pb-12">
+    <div className="p-4 lg:p-8 max-w-2xl mx-auto w-full pb-32 lg:pb-12">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900">Publier une annonce</h1>

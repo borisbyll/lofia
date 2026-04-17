@@ -61,7 +61,7 @@ export default function DashboardModPage() {
   }
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full pb-24 lg:pb-8">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <Shield size={20} className="text-primary-500 shrink-0" />

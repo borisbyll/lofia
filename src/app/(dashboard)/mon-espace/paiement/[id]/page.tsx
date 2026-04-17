@@ -167,7 +167,7 @@ export default function PaiementPage() {
   const propData = resa.proprietaire as any
 
   return (
-    <div className="p-4 lg:p-8 max-w-lg mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-lg mx-auto w-full pb-24 lg:pb-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900">

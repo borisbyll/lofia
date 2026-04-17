@@ -400,7 +400,7 @@ export default function ReservationsPage() {
   }
 
   if (loading) return (
-    <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-5 pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-4xl mx-auto w-full space-y-5 pb-24 lg:pb-8">
       <div className="skeleton h-8 w-48 rounded-xl" />
       {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-48 rounded-2xl" />)}
     </div>
@@ -409,7 +409,7 @@ export default function ReservationsPage() {
   const isProprio = mode === 'proprietaire'
 
   return (
-    <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-6 pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-4xl mx-auto w-full space-y-6 pb-24 lg:pb-8">
 
       {/* Titre avec couleur selon le mode */}
       <div className="flex items-center gap-3">

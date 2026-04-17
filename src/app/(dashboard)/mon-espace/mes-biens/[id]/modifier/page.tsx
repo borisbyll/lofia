@@ -125,7 +125,7 @@ export default function EditBienPage() {
   )
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-2xl mx-auto w-full pb-24 lg:pb-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-black text-gray-900">Modifier l'annonce</h1>
         <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600">

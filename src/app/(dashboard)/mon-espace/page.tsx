@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
   /* ── Skeleton ─────────────────────────────────────────────── */
   if (loading) return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-5 pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full space-y-5 pb-24 lg:pb-8">
       <div className="skeleton h-10 w-64 rounded-xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
@@ -156,7 +156,7 @@ export default function DashboardPage() {
      MODE PROPRIÉTAIRE
   ════════════════════════════════════════════════════════════ */
   if (mode === 'proprietaire') return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-6 pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full space-y-6 pb-24 lg:pb-8">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3">
@@ -332,7 +332,7 @@ export default function DashboardPage() {
      MODE LOCATAIRE
   ════════════════════════════════════════════════════════════ */
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-6 pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full space-y-6 pb-24 lg:pb-8">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3">

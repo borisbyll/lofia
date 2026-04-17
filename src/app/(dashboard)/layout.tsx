@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : 'U'
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#FFFDF5' }}>
+    <div className="min-h-screen flex w-full overflow-x-hidden" style={{ background: '#FFFDF5' }}>
 
       {/* ═══ SIDEBAR DESKTOP ═══════════════════════════════════ */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-primary-50 sticky top-0 h-screen shadow-[2px_0_12px_rgba(139,26,46,.04)]">
@@ -220,7 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ═══ MAIN CONTENT ══════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen lg:min-h-0">
 
         {/* Top bar mobile */}
         <header className="lg:hidden sticky top-0 z-30 bg-white border-b border-primary-50 px-4 py-3 flex items-center justify-between shadow-sm">
@@ -262,7 +262,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
           {children}
         </main>
 

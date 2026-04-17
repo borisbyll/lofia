@@ -51,7 +51,7 @@ export default function MessagesPage() {
   const nonLus = messages.filter(m => !m.lu).length
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full pb-24 lg:pb-8">
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900">Demandes reçues</h1>
         {nonLus > 0 && (
