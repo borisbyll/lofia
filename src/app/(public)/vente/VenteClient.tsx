@@ -34,7 +34,7 @@ export default function VentePage() {
   const load = async () => {
     setLoading(true)
     let q = supabase.from('biens')
-      .select('*, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
+      .select('id,slug,titre,categorie,type_bien,prix,prix_type,ville,commune,quartier,photos,photo_principale,superficie,nb_pieces,nb_chambres,nb_salles_bain,vues,favoris_count,statut,is_featured,owner_id,latitude,longitude, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
       .eq('statut', 'publie').eq('categorie', 'vente')
       .order('is_featured', { ascending: false })
       .order('publie_at', { ascending: false })
@@ -46,7 +46,7 @@ export default function VentePage() {
       if (range) { q = q.gte('prix', range.min); if (range.max) q = q.lte('prix', range.max) }
     }
     const { data } = await q.limit(80)
-    setBiens(data as Bien[] || [])
+    setBiens((data as unknown as Bien[]) || [])
     setLoading(false)
   }
 

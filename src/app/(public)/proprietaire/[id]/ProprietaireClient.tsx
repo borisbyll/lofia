@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -41,13 +41,17 @@ export default function ProprietaireClient({ profile, biens, avis }: Props) {
 
   const filtered = filter === 'all' ? biens : biens.filter(b => b.categorie === filter)
 
-  // Note moyenne (si avis)
-  const avgNote = biens.reduce((acc, b) => {
-    const avisArr = (b as any).avis ?? []
-    return acc + avisArr.reduce((s: number, a: any) => s + (a.note ?? 0), 0)
-  }, 0) / Math.max(1, biens.reduce((acc, b) => acc + ((b as any).avis?.length ?? 0), 0))
-
-  const totalAvis = biens.reduce((acc, b) => acc + ((b as any).avis?.length ?? 0), 0)
+  const totalAvis = useMemo(
+    () => biens.reduce((acc, b) => acc + ((b as any).avis?.length ?? 0), 0),
+    [biens]
+  )
+  const avgNote = useMemo(() => {
+    const total = biens.reduce((acc, b) => {
+      const avisArr = (b as any).avis ?? []
+      return acc + avisArr.reduce((s: number, a: any) => s + (a.note ?? 0), 0)
+    }, 0)
+    return total / Math.max(1, totalAvis)
+  }, [biens, totalAvis])
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 pb-24 lg:pb-12">

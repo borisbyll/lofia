@@ -53,7 +53,7 @@ export default function BienCard({ bien, compact, priority, onUnfavorite }: Prop
             alt={bien.titre}
             fill
             priority={priority}
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover sm:group-hover:scale-105 sm:transition-transform sm:duration-500"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (

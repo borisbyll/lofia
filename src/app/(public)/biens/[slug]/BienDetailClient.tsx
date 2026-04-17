@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -36,8 +36,14 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
 
-  const photos = [bien.photo_principale, ...( bien.photos || [])].filter(Boolean) as string[]
-  const notesMoyenne = avis.length > 0 ? avis.reduce((a, b) => a + b.note, 0) / avis.length : null
+  const photos = useMemo(
+    () => [bien.photo_principale, ...(bien.photos || [])].filter(Boolean) as string[],
+    [bien.photo_principale, bien.photos]
+  )
+  const notesMoyenne = useMemo(
+    () => avis.length > 0 ? avis.reduce((a, b) => a + b.note, 0) / avis.length : null,
+    [avis]
+  )
 
   const handleContact = async () => {
     if (!user) { toast.error('Connectez-vous pour contacter le propriétaire'); return }
