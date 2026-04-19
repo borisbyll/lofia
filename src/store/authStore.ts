@@ -30,12 +30,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   }),
 
   loadProfile: async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) get().setProfile(data as Profile)
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (data) get().setProfile(data as Profile)
+    } catch (e) {
+      console.error('[AuthStore] loadProfile error:', e)
+    }
   },
 
   logout: async () => {
@@ -45,14 +49,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   init: async () => {
     set({ loading: true })
-    // getUser() valide le token côté serveur — plus sécurisé que getSession()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      set({ user })
-      await get().loadProfile(user.id)
+    try {
+      // getSession() lit le JWT depuis le storage local — aucun appel réseau
+      // getUser() ferait un aller-retour serveur : si ça timeout, loading
+      // reste true indéfiniment → spinner permanent jusqu'au refresh
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        set({ user: session.user })
+        await get().loadProfile(session.user.id)
+      }
+    } catch (e) {
+      console.error('[AuthStore] init error:', e)
+    } finally {
+      // Toujours libérer le loading, même en cas d'erreur réseau
+      set({ loading: false })
     }
-    set({ loading: false })
 
+    // Écoute les changements : login, logout, refresh token automatique
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         set({ user: session.user })
