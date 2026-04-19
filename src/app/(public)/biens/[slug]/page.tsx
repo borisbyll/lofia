@@ -12,7 +12,7 @@ async function getBien(slug: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('biens')
-    .select('*, proprietaire:profiles!owner_id(id,nom,phone,avatar_url,identite_verifiee,bio,created_at)')
+    .select('*, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee,bio,created_at)')
     .eq('slug', slug)
     .eq('statut', 'publie')
     .single()

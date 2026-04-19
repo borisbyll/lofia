@@ -126,8 +126,24 @@ export default function PublierBienPage() {
   }
 
   /* Upload photos */
+  const SAFE_EXTS = ['jpg', 'jpeg', 'png', 'webp']
+  const MAX_SIZE  = 5 * 1024 * 1024 // 5 Mo
+
   const handlePhotos = useCallback(async (files: FileList) => {
-    const newFiles = Array.from(files).slice(0, 10 - form.photos.length)
+    const validated: File[] = []
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+      if (!SAFE_EXTS.includes(ext)) {
+        toast.error(`"${file.name}" : format non autorisé (jpg, png, webp uniquement)`)
+        continue
+      }
+      if (file.size > MAX_SIZE) {
+        toast.error(`"${file.name}" dépasse 5 Mo`)
+        continue
+      }
+      validated.push(file)
+    }
+    const newFiles = validated.slice(0, 10 - form.photos.length)
     if (!newFiles.length) return
     set('photos', [...form.photos, ...newFiles])
   }, [form.photos])

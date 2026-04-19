@@ -93,7 +93,6 @@ export default function PaiementPage() {
 
       const callFn = async (name: string, body: object) => {
         const url = `${supabaseUrl}/functions/v1/${name}`
-        console.log('callFn URL:', url, '| token length:', authToken?.length)
         const res = await fetch(url, {
           method: 'POST',
           headers: {
