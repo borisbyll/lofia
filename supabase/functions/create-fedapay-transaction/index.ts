@@ -1,6 +1,6 @@
 // Supabase Edge Function — Vérifie auth + ownership et retourne les données de paiement
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 
 const ALLOWED_ORIGINS = ['https://lofia.vercel.app', 'https://logikahome.com', 'https://www.logikahome.com', 'http://localhost:3000']
 

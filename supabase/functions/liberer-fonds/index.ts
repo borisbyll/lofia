@@ -2,7 +2,7 @@
 // 1. Libère les fonds séquestre 24h après check-in
 // 2. Termine les réservations dont date_fin est dépassée
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 
 Deno.serve(async (_req) => {
   const supabase = createClient(
