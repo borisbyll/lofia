@@ -12,11 +12,11 @@ import BienCardSkeleton from '@/components/biens/BienCardSkeleton'
 export const metadata: Metadata = {
   title: 'LOFIA. — Immobilier au Togo : Vente & Location',
   description: 'Trouvez votre bien immobilier au Togo. Maisons, villas, terrains, appartements à vendre ou à louer à Lomé et partout au Togo. Plateforme de confiance pour résidents et diaspora.',
-  alternates: { canonical: 'https://logikahome.com' },
+  alternates: { canonical: 'https://lofia.vercel.app' },
   openGraph: {
     title: 'LOFIA. — Immobilier au Togo : Vente & Location',
     description: 'Trouvez votre bien immobilier au Togo. Maisons, villas, terrains à vendre ou à louer à Lomé et partout au Togo.',
-    url: 'https://logikahome.com',
+    url: 'https://lofia.vercel.app',
     siteName: 'LOFIA.',
     locale: 'fr_TG',
     type: 'website',

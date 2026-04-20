@@ -5,11 +5,11 @@ import BienCardSkeleton from '@/components/biens/BienCardSkeleton'
 export const metadata = {
   title: 'Acheter — Terrains, maisons et villas en vente au Togo',
   description: 'Achetez un terrain, une maison, une villa ou un immeuble au Togo. Biens vérifiés par nos modérateurs. Lomé, Kara, Sokodé et toutes les villes du Togo.',
-  alternates: { canonical: 'https://logikahome.com/vente' },
+  alternates: { canonical: 'https://lofia.vercel.app/vente' },
   openGraph: {
     title: 'Acheter — Terrains, maisons et villas en vente au Togo',
     description: 'Achetez un terrain, une maison, une villa ou un immeuble au Togo. Biens vérifiés. Lomé et partout au Togo.',
-    url: 'https://logikahome.com/vente',
+    url: 'https://lofia.vercel.app/vente',
     siteName: 'LOFIA.',
     locale: 'fr_TG',
     type: 'website',

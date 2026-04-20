@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const ALLOWED_ORIGINS = ['https://lofia.vercel.app', 'https://logikahome.com', 'https://www.logikahome.com', 'http://localhost:3000']
+const ALLOWED_ORIGINS = ['https://lofia.vercel.app', 'https://lofia.com', 'https://www.lofia.com', 'http://localhost:3000']
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') ?? ''

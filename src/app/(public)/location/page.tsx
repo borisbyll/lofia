@@ -5,11 +5,11 @@ import BienCardSkeleton from '@/components/biens/BienCardSkeleton'
 export const metadata = {
   title: 'Louer — Maisons, villas et appartements en location au Togo',
   description: 'Louez une maison, villa, appartement ou studio au Togo. Location courte durée (vacances) et longue durée à Lomé et dans tout le Togo. Réservation sécurisée.',
-  alternates: { canonical: 'https://logikahome.com/location' },
+  alternates: { canonical: 'https://lofia.vercel.app/location' },
   openGraph: {
     title: 'Louer — Maisons, villas et appartements en location au Togo',
     description: 'Location courte et longue durée au Togo. Maisons, villas, appartements à Lomé et partout au Togo. Réservation sécurisée.',
-    url: 'https://logikahome.com/location',
+    url: 'https://lofia.vercel.app/location',
     siteName: 'LOFIA.',
     locale: 'fr_TG',
     type: 'website',
