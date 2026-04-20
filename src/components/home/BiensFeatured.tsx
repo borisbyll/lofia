@@ -4,16 +4,19 @@ import { createClient } from '@/lib/supabase/server'
 import BienCard from '@/components/biens/BienCard'
 import type { Bien } from '@/types/immobilier'
 
+// Cache côté Next.js — partagé avec la revalidation ISR de la page d'accueil
+export const revalidate = 300
+
 async function getBiensFeatured() {
   const supabase = await createClient()
   const { data } = await supabase
     .from('biens')
-    .select('*, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
+    .select('id,slug,titre,categorie,type_bien,type_location,prix,prix_type,ville,commune,photos,photo_principale,vues,favoris_count,statut,is_featured,publie_at,created_at,owner_id,proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
     .eq('statut', 'publie')
     .order('is_featured', { ascending: false })
     .order('publie_at', { ascending: false })
     .limit(8)
-  return (data || []) as Bien[]
+  return (data || []) as unknown as Bien[]
 }
 
 export default async function BiensFeatured() {

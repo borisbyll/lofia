@@ -1,12 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    minimumCacheTTL: 2592000, // 30 jours — photos immobilières changent rarement
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'frxcxnzgdlumbjkgdozs.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
       {
         protocol: 'https',
         hostname: 'frxcxnzgdlumbjkgdozs.supabase.co',

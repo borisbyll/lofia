@@ -2,6 +2,8 @@ import { Suspense } from 'react'
 import VenteClient from './VenteClient'
 import BienCardSkeleton from '@/components/biens/BienCardSkeleton'
 
+export const revalidate = 300
+
 export const metadata = {
   title: 'Acheter — Terrains, maisons et villas en vente au Togo',
   description: 'Achetez un terrain, une maison, une villa ou un immeuble au Togo. Biens vérifiés par nos modérateurs. Lomé, Kara, Sokodé et toutes les villes du Togo.',

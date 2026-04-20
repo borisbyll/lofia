@@ -2,6 +2,8 @@ import { Suspense } from 'react'
 import LocationClient from './LocationClient'
 import BienCardSkeleton from '@/components/biens/BienCardSkeleton'
 
+export const revalidate = 300
+
 export const metadata = {
   title: 'Louer — Maisons, villas et appartements en location au Togo',
   description: 'Louez une maison, villa, appartement ou studio au Togo. Location courte durée (vacances) et longue durée à Lomé et dans tout le Togo. Réservation sécurisée.',

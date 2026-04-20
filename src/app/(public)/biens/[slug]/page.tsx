@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import BienDetailClient from './BienDetailClient'
@@ -6,9 +7,13 @@ import type { Bien } from '@/types/immobilier'
 import { BRAND } from '@/lib/brand'
 import { formatPrix } from '@/lib/utils'
 
+// Revalidation ISR toutes les 10 minutes
+export const revalidate = 600
+
 interface Props { params: { slug: string } }
 
-async function getBien(slug: string) {
+// cache() déduplique la requête si generateMetadata + page l'appellent au même rendu
+const getBien = cache(async (slug: string) => {
   const supabase = await createClient()
   const { data } = await supabase
     .from('biens')
@@ -17,7 +22,7 @@ async function getBien(slug: string) {
     .eq('statut', 'publie')
     .single()
   return data as Bien | null
-}
+})
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const bien = await getBien(params.slug)

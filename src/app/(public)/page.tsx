@@ -9,6 +9,9 @@ import TrustSection from '@/components/home/TrustSection'
 import CtaSection from '@/components/home/CtaSection'
 import BienCardSkeleton from '@/components/biens/BienCardSkeleton'
 
+// Revalidation ISR toutes les 5 minutes — Vercel sert la page en cache, régénère en arrière-plan
+export const revalidate = 300
+
 export const metadata: Metadata = {
   title: 'LOFIA. — Immobilier au Togo : Vente & Location',
   description: 'Trouvez votre bien immobilier au Togo. Maisons, villas, terrains, appartements à vendre ou à louer à Lomé et partout au Togo. Plateforme de confiance pour résidents et diaspora.',
