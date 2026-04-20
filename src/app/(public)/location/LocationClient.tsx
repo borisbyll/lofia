@@ -15,10 +15,10 @@ const TYPES_LOCATION = TYPES_BIEN.filter(t => (t.categorie as readonly string[])
 type BienWithDist = Bien & { _distKm?: number }
 type TabDuree = 'all' | 'courte_duree' | 'longue_duree'
 
-export default function LocationPage() {
+export default function LocationPage({ initialBiens = [] }: { initialBiens?: Bien[] }) {
   const searchParams = useSearchParams()
-  const [biens,       setBiens]       = useState<Bien[]>([])
-  const [loading,     setLoading]     = useState(true)
+  const [biens,       setBiens]       = useState<Bien[]>(initialBiens)
+  const [loading,     setLoading]     = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [query,       setQuery]       = useState(searchParams.get('q') || '')
   const [duree,       setDuree]       = useState<TabDuree>((searchParams.get('type') as TabDuree) || 'all')

@@ -118,9 +118,9 @@ export default function HeroSection() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-8 sm:mt-12 max-w-xs sm:max-w-sm mx-auto">
             {[
-              { value: '247', label: 'Publiés' },
-              { value: '94',  label: 'Hôtes' },
-              { value: '12',  label: 'Villes' },
+              { value: '500+', label: 'Annonces' },
+              { value: '1 200+', label: 'Membres' },
+              { value: '15',  label: 'Villes' },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className="text-2xl sm:text-3xl font-black" style={{ color: '#D4A832' }}>{s.value}</p>

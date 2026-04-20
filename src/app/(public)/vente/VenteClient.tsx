@@ -14,10 +14,10 @@ import type { Bien } from '@/types/immobilier'
 const TYPES_VENTE = TYPES_BIEN.filter(t => (t.categorie as readonly string[]).includes('vente'))
 type BienWithDist = Bien & { _distKm?: number }
 
-export default function VentePage() {
+export default function VentePage({ initialBiens = [] }: { initialBiens?: Bien[] }) {
   const searchParams = useSearchParams()
-  const [biens,       setBiens]       = useState<Bien[]>([])
-  const [loading,     setLoading]     = useState(true)
+  const [biens,       setBiens]       = useState<Bien[]>(initialBiens)
+  const [loading,     setLoading]     = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [query,       setQuery]       = useState(searchParams.get('q') || '')
   const [ville,       setVille]       = useState(searchParams.get('ville') || '')
