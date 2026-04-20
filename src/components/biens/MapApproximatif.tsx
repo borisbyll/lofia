@@ -1,9 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
-import { MapContainer, TileLayer, Circle, useMap } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-
 // Coordonnées des villes du Togo
 const COORDS_VILLES: Record<string, [number, number]> = {
   'Lomé':        [6.1375, 1.2123],
@@ -26,47 +22,41 @@ const COORDS_VILLES: Record<string, [number, number]> = {
 // Fallback : centre du Togo
 const DEFAULT_COORDS: [number, number] = [8.6195, 0.8248]
 
-function RecenterMap({ center }: { center: [number, number] }) {
-  const map = useMap()
-  useEffect(() => { map.setView(center, 13) }, [map, center])
-  return null
-}
-
 interface Props {
   ville: string
   commune?: string | null
 }
 
 export default function MapApproximatif({ ville, commune }: Props) {
-  const center = COORDS_VILLES[ville] ?? DEFAULT_COORDS
+  const [lat, lon] = COORDS_VILLES[ville] ?? DEFAULT_COORDS
+  const zoom = 13
+
+  // Bounding box ≈ ±0.01° (~1 km) autour du centre
+  const delta = 0.012
+  const bbox = `${lon - delta},${lat - delta},${lon + delta},${lat + delta}`
+
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden" style={{ height: 220 }}>
-      <MapContainer
-        center={center}
-        zoom={13}
-        scrollWheelZoom={false}
-        dragging={false}
-        zoomControl={false}
-        attributionControl={false}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Circle
-          center={center}
-          radius={800}
-          pathOptions={{
-            color: '#8B1A2E',
-            fillColor: '#8B1A2E',
-            fillOpacity: 0.15,
-            weight: 2,
-          }}
-        />
-        <RecenterMap center={center} />
-      </MapContainer>
+      {/* Overlay semi-transparent pour indiquer zone approximative + bloquer interaction */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(139,26,46,0.10) 0%, transparent 80%)' }}
+      />
+
+      <iframe
+        title={`Carte approximative — ${ville}`}
+        src={src}
+        width="100%"
+        height="100%"
+        style={{ border: 0, display: 'block', filter: 'saturate(0.85)' }}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
 
       {/* Badge zone approximative */}
-      <div className="absolute bottom-3 left-3 z-[400] bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-primary-100">
+      <div className="absolute bottom-3 left-3 z-20 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center gap-1.5 shadow-sm border border-primary-100">
         <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
         <span className="text-xs font-semibold text-primary-700">
           Zone approximative — {commune ? `${commune}, ` : ''}{ville}
