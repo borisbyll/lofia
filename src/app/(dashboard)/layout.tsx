@@ -78,15 +78,15 @@ const adminItems = [
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
 // Profil accessible via avatar dans le header mobile → libère 1 slot
 const bottomProprietaire = [
-  { href: '/mon-espace',               label: "Accueil",        icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens',     label: 'Annonces',       icon: Building2 },
-  { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
-  { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
-  { href: '/mon-espace/notifications', label: 'Alertes',        icon: Bell },
+  { href: '/mon-espace',               label: 'Vue d\'ensemble', icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens',     label: 'Annonces',        icon: Building2 },
+  { href: '/mon-espace/publier',       label: 'Publier',         icon: Plus, accent: true },
+  { href: '/mon-espace/messagerie',    label: 'Messages',        icon: MessageCircle },
+  { href: '/mon-espace/notifications', label: 'Alertes',         icon: Bell },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',               label: "Accueil",        icon: LayoutDashboard },
+  { href: '/mon-espace',               label: 'Vue d\'ensemble', icon: LayoutDashboard },
   { href: '/mon-espace/reservations',  label: 'Réservations',   icon: CalendarCheck },
   { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
   { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
