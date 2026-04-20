@@ -266,6 +266,13 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 <PropriétaireCard bien={bien} onContact={handleContact} />
               </div>
 
+              {/* Panel réservation (mobile uniquement) */}
+              {bien.categorie === 'location' && bien.type_location === 'courte_duree' && (
+                <div id="reserver" className="lg:hidden scroll-mt-4">
+                  <ReservationPanel bien={bien} />
+                </div>
+              )}
+
               {/* Avis */}
               {avis.length > 0 && (
                 <div className="bg-white border border-gray-100 rounded-2xl p-6">
