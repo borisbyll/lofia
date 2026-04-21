@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
 import NotifBell from './NotifBell'
 import { LogoLofia } from '@/components/lofia/LogoLofia'
+import CurrencySelector from '@/components/ui/CurrencySelector'
 
 const navLinks = [
   { href: '/',         label: 'Accueil' },
@@ -95,6 +96,7 @@ export default function Navbar() {
 
         {/* Actions desktop */}
         <div className="hidden md:flex items-center gap-2">
+          <CurrencySelector />
           {user ? (
             <>
               <Link

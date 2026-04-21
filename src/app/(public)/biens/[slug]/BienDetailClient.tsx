@@ -14,6 +14,7 @@ import toast from 'react-hot-toast'
 import { formatPrix, formatDate, cn } from '@/lib/utils'
 import { BRAND } from '@/lib/brand'
 import { useAuthStore } from '@/store/authStore'
+import { useCurrencyStore, formatConverted, CURRENCIES } from '@/store/currencyStore'
 import { supabase } from '@/lib/supabase/client'
 import type { Bien, Avis } from '@/types/immobilier'
 import BienCard from '@/components/biens/BienCard'
@@ -33,6 +34,7 @@ interface Props {
 
 export default function BienDetailClient({ bien, avis, similaires }: Props) {
   const { user } = useAuthStore()
+  const { selected, setSelected, rates, fetchRates } = useCurrencyStore()
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
 
@@ -194,10 +196,38 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                   {bien.superficie != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><Maximize2 size={14} className="text-primary-500" />{bien.superficie} m²</div>}
                   {bien.nb_salons != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><Building2 size={14} className="text-primary-500" />{bien.nb_salons} salon{bien.nb_salons > 1 ? 's' : ''}</div>}
                 </div>
-                <p className="text-2xl sm:text-3xl font-black prix">
-                  {formatPrix(bien.prix)}
-                  {bien.categorie === 'location' && <span className="text-xs sm:text-sm text-gray-400 font-normal ml-1.5">{bien.type_location === 'courte_duree' ? '/nuit' : '/mois'}</span>}
-                </p>
+                <div className="flex items-end gap-3 flex-wrap">
+                  <div>
+                    <p className="text-2xl sm:text-3xl font-black prix">
+                      {formatConverted(bien.prix, selected, rates)}
+                      {bien.categorie === 'location' && (
+                        <span className="text-xs sm:text-sm text-gray-400 font-normal ml-1.5">
+                          {bien.type_location === 'courte_duree' ? '/nuit' : '/mois'}
+                        </span>
+                      )}
+                    </p>
+                    {selected !== 'XOF' && (
+                      <p className="text-xs text-gray-400 mt-0.5">≈ {formatPrix(bien.prix)}</p>
+                    )}
+                  </div>
+                  {/* Sélecteur devise inline */}
+                  <div className="flex gap-1 flex-wrap mb-1">
+                    {CURRENCIES.map(c => (
+                      <button
+                        key={c.code}
+                        onClick={() => { setSelected(c.code); fetchRates() }}
+                        className={cn(
+                          'px-2 py-1 rounded-lg text-xs font-semibold transition-all border',
+                          selected === c.code
+                            ? 'bg-primary-500 text-white border-primary-500'
+                            : 'bg-white text-gray-500 border-gray-200 hover:border-primary-300'
+                        )}
+                      >
+                        {c.flag} {c.symbol}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Partage */}
                 <div className="flex items-center gap-2 flex-wrap mt-4">

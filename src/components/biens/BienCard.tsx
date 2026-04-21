@@ -7,6 +7,7 @@ import { Heart, MapPin, BedDouble, Bath, Maximize2, Navigation, ShieldCheck, Sta
 import { cn, formatPrix, formatDistance } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
+import { useCurrencyStore, formatConverted } from '@/store/currencyStore'
 import type { Bien } from '@/types/immobilier'
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 
 export default function BienCard({ bien, compact, priority, onUnfavorite }: Props) {
   const { user } = useAuthStore()
+  const { selected, rates } = useCurrencyStore()
   const [favori, setFavori] = useState(bien._favori ?? false)
   const [loadingFav, setLoadingFav] = useState(false)
 
@@ -134,8 +136,8 @@ export default function BienCard({ bien, compact, priority, onUnfavorite }: Prop
         </h3>
 
         {/* Prix */}
-        <p className="prix text-lg mb-2.5">
-          {formatPrix(bien.prix)}
+        <p className="prix text-lg mb-1">
+          {formatConverted(bien.prix, selected, rates)}
           {bien.categorie === 'location' && isCourte && (
             <span className="text-xs font-normal ml-1" style={{ color: '#7a5c3a' }}>/nuit</span>
           )}
@@ -143,6 +145,12 @@ export default function BienCard({ bien, compact, priority, onUnfavorite }: Prop
             <span className="text-xs font-normal ml-1" style={{ color: '#7a5c3a' }}>/mois</span>
           )}
         </p>
+        {/* Prix FCFA en sous-titre si autre devise sélectionnée */}
+        {selected !== 'XOF' && (
+          <p className="text-xs mb-2" style={{ color: '#7a5c3a' }}>
+            ≈ {formatPrix(bien.prix)}
+          </p>
+        )}
 
         {/* Localisation */}
         <div className="flex items-center gap-1 text-xs mb-3" style={{ color: '#7a5c3a' }}>
