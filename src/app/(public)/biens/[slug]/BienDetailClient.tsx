@@ -148,8 +148,8 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
 
                 {/* Actions */}
                 <div className="absolute top-4 right-4 flex gap-2">
-                  <button onClick={handleShare} className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors">
-                    <Share2 size={15} />
+                  <button onClick={handleShare} aria-label="Partager cette annonce" className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors">
+                    <Share2 size={15} aria-hidden="true" />
                   </button>
                 </div>
 

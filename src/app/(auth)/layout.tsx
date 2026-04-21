@@ -12,7 +12,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="h-1 w-full" style={{ background: '#D4A832' }} />
 
       <header className="px-4 py-4 sm:p-5">
-        <Link href="/" className="inline-flex items-center">
+        <Link href="/" className="inline-flex items-center" aria-label="LOFIA. — Accueil">
           <LogoLofia variant="dark" className="text-xl" />
         </Link>
       </header>

@@ -21,11 +21,11 @@ export default function Footer() {
               {BRAND.tagline}
             </p>
             <div className="flex gap-3">
-              <a href="#" className="w-9 h-9 rounded-xl flex items-center justify-center text-white bg-white/10 hover:bg-accent transition-colors">
-                <Facebook size={16} />
+              <a href="#" aria-label="LOFIA. sur Facebook" className="w-9 h-9 rounded-xl flex items-center justify-center text-white bg-white/10 hover:bg-accent transition-colors">
+                <Facebook size={16} aria-hidden="true" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-xl flex items-center justify-center text-white bg-white/10 hover:bg-accent transition-colors">
-                <Instagram size={16} />
+              <a href="#" aria-label="LOFIA. sur Instagram" className="w-9 h-9 rounded-xl flex items-center justify-center text-white bg-white/10 hover:bg-accent transition-colors">
+                <Instagram size={16} aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -60,10 +60,8 @@ export default function Footer() {
             </p>
             <div className="space-y-2.5">
               {[
-                { href: '/faq',             label: 'FAQ' },
-                { href: '/conditions',      label: "Conditions d'utilisation" },
-                { href: '/confidentialite', label: 'Confidentialité' },
-                { href: '/contact',         label: 'Nous contacter' },
+                { href: '/faq',        label: 'FAQ' },
+                { href: '/conditions', label: "Conditions d'utilisation" },
               ].map(l => (
                 <Link
                   key={l.href}

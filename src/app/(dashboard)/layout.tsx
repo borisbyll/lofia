@@ -144,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Logo */}
         <div className="px-5 py-4 border-b border-primary-50">
-          <Link href="/"><LogoLofia variant="dark" className="text-xl" /></Link>
+          <Link href="/" aria-label="LOFIA. — Accueil"><LogoLofia variant="dark" className="text-xl" /></Link>
         </div>
 
         {/* Avatar + infos utilisateur */}
@@ -246,13 +246,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Top bar mobile */}
         <header className="lg:hidden sticky top-0 z-30 bg-white border-b border-primary-50 px-4 py-3 flex items-center justify-between shadow-sm">
-          <Link href="/"><LogoLofia variant="dark" className="text-xl" /></Link>
+          <Link href="/" aria-label="LOFIA. — Accueil"><LogoLofia variant="dark" className="text-xl" /></Link>
           <div className="flex items-center gap-2">
             <NotifBell />
             {/* Avatar utilisateur → profil + déconnexion */}
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(v => !v)}
+                aria-label="Menu utilisateur"
                 className="relative w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-black text-xs shadow-sm overflow-hidden">
                 {profile?.avatar_url
                   ? <Image src={profile.avatar_url} alt={profile?.nom ?? ''} fill className="object-cover" sizes="32px" />

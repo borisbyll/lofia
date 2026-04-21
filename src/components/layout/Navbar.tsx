@@ -67,7 +67,7 @@ export default function Navbar() {
       <div className="wrap h-15 flex items-center justify-between gap-4" style={{ height: 60 }}>
 
         {/* Logo */}
-        <Link href="/" className="shrink-0">
+        <Link href="/" className="shrink-0" aria-label="LOFIA. — Accueil">
           <LogoLofia variant="dark" className="text-xl" />
         </Link>
 
