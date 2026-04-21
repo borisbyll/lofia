@@ -204,6 +204,7 @@ export default function PublierBienPage() {
     if (form.photos.length === 0) { toast.error('Ajoutez au moins une photo'); return }
 
     setLoading(true)
+    let bienPayload: Record<string, any> = {}
     try {
       // 1. Upload des photos
       const uploadedUrls: string[] = []
@@ -231,7 +232,7 @@ export default function PublierBienPage() {
 
       // 3. Créer le bien
       const slug = slugify(form.titre) + '-' + Date.now()
-      const bienPayload: Record<string, any> = {
+      bienPayload = {
         owner_id:     user!.id,
         titre:        form.titre.trim(),
         slug,
@@ -273,7 +274,11 @@ export default function PublierBienPage() {
       }
       router.push('/mon-espace/mes-biens')
     } catch (err: any) {
-      console.error('[publier] erreur:', err)
+      console.error('[publier] code:', err?.code)
+      console.error('[publier] message:', err?.message)
+      console.error('[publier] details:', err?.details)
+      console.error('[publier] hint:', err?.hint)
+      console.error('[publier] payload envoyé:', JSON.stringify(bienPayload, null, 2))
       const msg = err?.message || err?.error_description || 'Erreur lors de la publication'
       toast.error(msg)
     } finally {
