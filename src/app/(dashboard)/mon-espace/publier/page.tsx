@@ -24,12 +24,12 @@ interface FormData {
   // Étape 2 — Détails
   description:  string
   prix:         string
-  prix_type:    'total' | 'mois' | 'nuit'
+  prix_type:    'total' | 'par_mois' | 'par_nuit'
   prix_negociable: boolean
-  surface:      string
+  superficie:   string
   nb_pieces:    string
   nb_chambres:  string
-  nb_sdb:       string
+  nb_salles_bain: string
   nb_etages:    string
   meuble:       boolean
   equipements:  string[]
@@ -43,15 +43,15 @@ interface FormData {
   // Étape 4 — Médias
   photos:       File[]
   photoUrls:    string[]  // après upload
-  video_url:    string
+  videoFile:    File | null
 }
 
 const initForm: FormData = {
   categorie: '', type_bien: '', type_location: '', titre: '',
   description: '', prix: '', prix_type: 'total', prix_negociable: false,
-  surface: '', nb_pieces: '', nb_chambres: '', nb_sdb: '', nb_etages: '', meuble: false, equipements: [],
+  superficie: '', nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '', meuble: false, equipements: [],
   ville: '', commune: '', adresse: '', quartier: '', lat: '', lng: '',
-  photos: [], photoUrls: [], video_url: '',
+  photos: [], photoUrls: [], videoFile: null,
 }
 
 const ETAPES = [
@@ -61,6 +61,34 @@ const ETAPES = [
   { id: 4, label: 'Photos',       icon: Image },
 ]
 
+/* ── Règles métier du formulaire ───────────────────────────────── */
+const RESIDENTIELS = ['Maison', 'Villa', 'Appartement', 'Studio']
+
+// prix_type est toujours déduit — jamais saisi manuellement
+function derivePrixType(cat: string, typeLoc: string): 'total' | 'par_mois' | 'par_nuit' {
+  if (cat === 'vente') return 'total'
+  if (typeLoc === 'courte_duree') return 'par_nuit'
+  return 'par_mois'
+}
+
+function getPrixLabel(cat: string, typeLoc: string) {
+  if (cat === 'vente') return 'Prix de vente (FCFA)'
+  if (typeLoc === 'courte_duree') return 'Prix par nuit (FCFA)'
+  return 'Loyer mensuel (FCFA)'
+}
+
+function getPrixBadge(cat: string, typeLoc: string) {
+  if (cat === 'vente') return 'Prix total'
+  if (typeLoc === 'courte_duree') return '/ nuit'
+  return '/ mois'
+}
+
+// Champs conditionnels selon le type de bien
+const showMeuble     = (t: string) => RESIDENTIELS.includes(t)
+const showPieces     = (t: string) => RESIDENTIELS.includes(t)
+const showEtages     = (t: string) => ['Maison', 'Villa', 'Immeuble'].includes(t)
+const showNegociable = (cat: string) => cat === 'vente'
+
 /* ── Composant ─────────────────────────────────────────────────── */
 export default function PublierBienPage() {
   const router = useRouter()
@@ -69,7 +97,8 @@ export default function PublierBienPage() {
   const [form,    setForm]    = useState<FormData>(initForm)
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef  = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
 
   const set = (key: keyof FormData, value: any) =>
     setForm(prev => ({ ...prev, [key]: value }))
@@ -151,6 +180,23 @@ export default function PublierBienPage() {
   const removePhoto = (i: number) =>
     set('photos', form.photos.filter((_, idx) => idx !== i))
 
+  /* Upload vidéo */
+  const VIDEO_EXTS    = ['mp4', 'mov', 'webm', 'avi']
+  const VIDEO_MAX     = 200 * 1024 * 1024 // 200 Mo
+
+  const handleVideo = (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!VIDEO_EXTS.includes(ext)) {
+      toast.error('Format non autorisé (mp4, mov, webm, avi uniquement)')
+      return
+    }
+    if (file.size > VIDEO_MAX) {
+      toast.error(`La vidéo dépasse 200 Mo`)
+      return
+    }
+    set('videoFile', file)
+  }
+
   /* Soumission finale */
   const handleSubmit = async () => {
     const err = validateEtape(4)
@@ -170,7 +216,20 @@ export default function PublierBienPage() {
         uploadedUrls.push(publicUrl)
       }
 
-      // 2. Créer le bien
+      // 2. Upload de la vidéo (si fournie)
+      let videoUrl: string | null = null
+      if (form.videoFile) {
+        const ext = form.videoFile.name.split('.').pop()
+        const path = `${user!.id}/videos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: vidErr } = await supabase.storage.from('biens-photos').upload(path, form.videoFile, {
+          contentType: form.videoFile.type || 'video/mp4',
+        })
+        if (vidErr) throw vidErr
+        const { data: { publicUrl } } = supabase.storage.from('biens-photos').getPublicUrl(path)
+        videoUrl = publicUrl
+      }
+
+      // 3. Créer le bien
       const slug = slugify(form.titre) + '-' + Date.now()
       const bienPayload: Record<string, any> = {
         owner_id:     user!.id,
@@ -187,17 +246,18 @@ export default function PublierBienPage() {
         commune:      form.commune || null,
         adresse:      form.adresse.trim(),
         quartier:     form.quartier || null,
-        photos:       uploadedUrls,
-        video_url:    form.video_url || null,
-        equipements:  form.equipements,
-        meuble:       form.meuble,
+        photos:           uploadedUrls,
+        photo_principale: uploadedUrls[0] || null,
+        video_url:        videoUrl,
+        meuble:           form.meuble,
+        equipements:      form.equipements,
       }
 
-      if (form.surface) bienPayload.surface = Number(form.surface)
-      if (form.nb_pieces) bienPayload.nb_pieces = Number(form.nb_pieces)
-      if (form.nb_chambres) bienPayload.nb_chambres = Number(form.nb_chambres)
-      if (form.nb_sdb) bienPayload.nb_sdb = Number(form.nb_sdb)
-      if (form.nb_etages) bienPayload.nb_etages = Number(form.nb_etages)
+      if (form.superficie)    bienPayload.superficie    = Number(form.superficie)
+      if (form.nb_pieces)     bienPayload.nb_pieces     = Number(form.nb_pieces)
+      if (form.nb_chambres)   bienPayload.nb_chambres   = Number(form.nb_chambres)
+      if (form.nb_salles_bain) bienPayload.nb_salles_bain = Number(form.nb_salles_bain)
+      if (form.nb_etages)     bienPayload.nb_etages     = Number(form.nb_etages)
       if (form.lat && form.lng) {
         bienPayload.latitude  = Number(form.lat)
         bienPayload.longitude = Number(form.lng)
@@ -273,7 +333,14 @@ export default function PublierBienPage() {
               <div className="grid grid-cols-2 gap-3">
                 {(['vente', 'location'] as const).map(cat => (
                   <button key={cat} type="button"
-                    onClick={() => set('categorie', cat)}
+                    onClick={() => setForm(prev => ({
+                      ...prev,
+                      categorie: cat,
+                      type_bien: '',
+                      type_location: '',
+                      prix_type: derivePrixType(cat, ''),
+                      meuble: false, nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
+                    }))}
                     className={cn(
                       'p-4 rounded-xl border-2 text-sm font-bold transition-all',
                       form.categorie === cat
@@ -299,7 +366,13 @@ export default function PublierBienPage() {
                     { v: 'longue_duree', label: '📅 Longue durée', sub: 'Bail mensuel' },
                   ] as const).map(({ v, label, sub }) => (
                     <button key={v} type="button"
-                      onClick={() => { set('type_location', v); set('prix_type', v === 'courte_duree' ? 'nuit' : 'mois') }}
+                      onClick={() => setForm(prev => ({
+                        ...prev,
+                        type_location: v,
+                        type_bien: '',
+                        prix_type: derivePrixType(prev.categorie, v),
+                        meuble: false, nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
+                      }))}
                       className={cn(
                         'p-4 rounded-xl border-2 text-sm font-bold transition-all',
                         form.type_location === v
@@ -321,7 +394,11 @@ export default function PublierBienPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {(TYPES_PAR_CATEGORIE[form.categorie] ?? []).map((t: string) => (
                     <button key={t} type="button"
-                      onClick={() => set('type_bien', t)}
+                      onClick={() => setForm(prev => ({
+                        ...prev,
+                        type_bien: t,
+                        meuble: false, nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
+                      }))}
                       className={cn(
                         'p-3 rounded-xl border text-sm font-medium text-left transition-all',
                         form.type_bien === t
@@ -360,70 +437,83 @@ export default function PublierBienPage() {
               <p className="text-xs text-gray-400 mt-1">{form.description.length}/2000 caractères</p>
             </div>
 
-            {/* Prix */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label-field">Prix (FCFA) *</label>
-                <div className="relative">
+            {/* Prix — unité déduite automatiquement */}
+            <div>
+              <label className="label-field">{getPrixLabel(form.categorie, form.type_location)} *</label>
+              <div className="relative flex gap-2">
+                <div className="relative flex-1">
                   <DollarSign size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input type="number" value={form.prix}
                     onChange={e => set('prix', e.target.value)}
                     placeholder="0" className="input-field pl-9" min="0" />
                 </div>
-              </div>
-              <div>
-                <label className="label-field">Unité</label>
-                <select value={form.prix_type} onChange={e => set('prix_type', e.target.value)}
-                  className="input-field">
-                  <option value="total">Prix total</option>
-                  <option value="mois">/ mois</option>
-                  <option value="nuit">/ nuit</option>
-                </select>
+                <span className="flex items-center px-3.5 bg-primary-50 border border-primary-100 rounded-xl text-sm font-semibold text-primary-600 whitespace-nowrap">
+                  {getPrixBadge(form.categorie, form.type_location)}
+                </span>
               </div>
             </div>
 
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" checked={form.prix_negociable}
-                onChange={e => set('prix_negociable', e.target.checked)}
-                className="accent-primary-500" />
-              <span className="text-sm text-gray-700 font-medium">Prix négociable</span>
-            </label>
+            {/* Prix négociable — vente uniquement */}
+            {showNegociable(form.categorie) && (
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" checked={form.prix_negociable}
+                  onChange={e => set('prix_negociable', e.target.checked)}
+                  className="accent-primary-500" />
+                <span className="text-sm text-gray-700 font-medium">Prix négociable</span>
+              </label>
+            )}
 
-            {/* Surfaces + pièces */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label-field">Surface (m²)</label>
-                <input type="number" value={form.surface}
-                  onChange={e => set('surface', e.target.value)}
-                  placeholder="0" className="input-field" min="0" />
-              </div>
-              <div>
-                <label className="label-field">Nb de pièces</label>
-                <input type="number" value={form.nb_pieces}
-                  onChange={e => set('nb_pieces', e.target.value)}
-                  placeholder="0" className="input-field" min="0" />
-              </div>
-              <div>
-                <label className="label-field">Chambres</label>
-                <input type="number" value={form.nb_chambres}
-                  onChange={e => set('nb_chambres', e.target.value)}
-                  placeholder="0" className="input-field" min="0" />
-              </div>
-              <div>
-                <label className="label-field">Salles de bain</label>
-                <input type="number" value={form.nb_sdb}
-                  onChange={e => set('nb_sdb', e.target.value)}
-                  placeholder="0" className="input-field" min="0" />
-              </div>
+            {/* Superficie — toujours visible */}
+            <div>
+              <label className="label-field">Superficie (m²)</label>
+              <input type="number" value={form.superficie}
+                onChange={e => set('superficie', e.target.value)}
+                placeholder="0" className="input-field" min="0" />
             </div>
 
-            {/* Meublé */}
-            <label className="flex items-center gap-2.5 cursor-pointer p-3 rounded-xl border border-gray-200 hover:border-primary-300 transition-colors">
-              <input type="checkbox" checked={form.meuble}
-                onChange={e => set('meuble', e.target.checked)}
-                className="accent-primary-500" />
-              <span className="text-sm font-medium text-gray-700">Bien meublé</span>
-            </label>
+            {/* Pièces/Chambres/SDB — résidentiel uniquement */}
+            {showPieces(form.type_bien) && (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="label-field">Pièces</label>
+                  <input type="number" value={form.nb_pieces}
+                    onChange={e => set('nb_pieces', e.target.value)}
+                    placeholder="0" className="input-field" min="0" />
+                </div>
+                <div>
+                  <label className="label-field">Chambres</label>
+                  <input type="number" value={form.nb_chambres}
+                    onChange={e => set('nb_chambres', e.target.value)}
+                    placeholder="0" className="input-field" min="0" />
+                </div>
+                <div>
+                  <label className="label-field">Salles de bain</label>
+                  <input type="number" value={form.nb_salles_bain}
+                    onChange={e => set('nb_salles_bain', e.target.value)}
+                    placeholder="0" className="input-field" min="0" />
+                </div>
+              </div>
+            )}
+
+            {/* Étages — maison, villa, immeuble uniquement */}
+            {showEtages(form.type_bien) && (
+              <div>
+                <label className="label-field">Nombre d&apos;étages</label>
+                <input type="number" value={form.nb_etages}
+                  onChange={e => set('nb_etages', e.target.value)}
+                  placeholder="0" className="input-field" min="0" />
+              </div>
+            )}
+
+            {/* Meublé — résidentiel uniquement */}
+            {showMeuble(form.type_bien) && (
+              <label className="flex items-center gap-2.5 cursor-pointer p-3 rounded-xl border border-gray-200 hover:border-primary-300 transition-colors">
+                <input type="checkbox" checked={form.meuble}
+                  onChange={e => set('meuble', e.target.checked)}
+                  className="accent-primary-500" />
+                <span className="text-sm font-medium text-gray-700">Bien meublé</span>
+              </label>
+            )}
 
             {/* Équipements */}
             <div>
@@ -568,21 +658,56 @@ export default function PublierBienPage() {
 
             {/* Vidéo */}
             <div>
-              <label className="label-field">Lien vidéo <span className="text-gray-400 font-normal">(YouTube ou autres)</span></label>
-              <input type="url" value={form.video_url}
-                onChange={e => set('video_url', e.target.value)}
-                placeholder="https://youtube.com/watch?v=…" className="input-field" />
+              <label className="label-field">
+                Vidéo du bien <span className="text-gray-400 font-normal">(optionnel — mp4, mov, webm — max 200 Mo)</span>
+              </label>
+
+              {!form.videoFile ? (
+                <div
+                  onClick={() => videoInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50/30 transition-colors">
+                  <Upload size={28} className="mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm font-semibold text-gray-600">Cliquez pour charger une vidéo</p>
+                  <p className="text-xs text-gray-400 mt-1">mp4, mov, webm, avi — max 200 Mo</p>
+                </div>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden bg-black">
+                  <video
+                    src={URL.createObjectURL(form.videoFile)}
+                    controls
+                    className="w-full max-h-52 object-contain"
+                  />
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-100 rounded-b-xl">
+                    <span className="text-xs text-gray-600 truncate max-w-[70%]">{form.videoFile.name}</span>
+                    <button type="button"
+                      onClick={() => { set('videoFile', null); if (videoInputRef.current) videoInputRef.current.value = '' }}
+                      className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium">
+                      <X size={13} /> Supprimer
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm,video/avi,.mp4,.mov,.webm,.avi"
+                className="hidden"
+                onChange={e => e.target.files?.[0] && handleVideo(e.target.files[0])}
+              />
             </div>
 
             {/* Récapitulatif */}
             <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
               <p className="font-bold text-gray-900 mb-3">Récapitulatif</p>
               <div className="flex justify-between text-gray-600">
-                <span>Catégorie</span>
-                <span className="font-semibold capitalize">{form.categorie}</span>
+                <span>Type d&apos;opération</span>
+                <span className="font-semibold capitalize">
+                  {form.categorie === 'vente' ? 'Vente' : form.type_location === 'courte_duree' ? 'Location courte durée' : 'Location longue durée'}
+                </span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>Type</span>
+                <span>Type de bien</span>
                 <span className="font-semibold">{form.type_bien}</span>
               </div>
               <div className="flex justify-between text-gray-600">
@@ -591,17 +716,36 @@ export default function PublierBienPage() {
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Prix</span>
-                <span className="font-semibold">{Number(form.prix).toLocaleString()} FCFA
-                  {form.prix_type !== 'total' ? ` / ${form.prix_type}` : ''}
+                <span className="font-semibold">
+                  {Number(form.prix).toLocaleString()} FCFA {getPrixBadge(form.categorie, form.type_location)}
+                  {form.prix_negociable && form.categorie === 'vente' ? ' (négociable)' : ''}
                 </span>
               </div>
+              {form.superficie && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Superficie</span>
+                  <span className="font-semibold">{form.superficie} m²</span>
+                </div>
+              )}
+              {showPieces(form.type_bien) && (form.nb_chambres || form.nb_salles_bain) && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Chambres / SDB</span>
+                  <span className="font-semibold">{form.nb_chambres || '–'} ch. / {form.nb_salles_bain || '–'} sdb</span>
+                </div>
+              )}
+              {showMeuble(form.type_bien) && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Meublé</span>
+                  <span className="font-semibold">{form.meuble ? 'Oui' : 'Non'}</span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-600">
                 <span>Ville</span>
                 <span className="font-semibold">{form.ville}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Photos</span>
-                <span className="font-semibold">{form.photos.length}</span>
+                <span className="font-semibold">{form.photos.length} photo{form.photos.length > 1 ? 's' : ''}</span>
               </div>
               {form.categorie === 'vente' && (
                 <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">

@@ -13,16 +13,17 @@ Stack : **Next.js 14.2.29** + React 18.3.1 + TypeScript 5.6 + **Tailwind CSS v3.
 
 ## 2. Identité — NOM ET DOMAINE OFFICIELS
 - **Nom officiel** : `LOFIA.` (avec le point, c'est le nom complet)
-- **Domaine** : `logikahome.com`
-- **Email** : `contact@logikahome.com`
+- **Domaine définitif** : `lofia.com`
+- **Domaine actuel (déployé)** : `lofia.vercel.app`
+- **Email** : `contact@lofia.com`
 - **WhatsApp** : `+22899794772`
 - **Adresse** : `Lomé, Togo`
 - **Anciens noms** : `boris-immo` → `Dôme Immobilier` → `LOFIA.` — **remplacer partout**
-- Changement via `src/lib/brand.ts` — ✅ mis à jour (name: 'LOFIA.', logo: '/icons/icon.svg')
+- `src/lib/brand.ts` ✅ à jour : `{ name: 'LOFIA.', domaine: 'lofia.vercel.app', domaineDefinitif: 'lofia.com', email: 'contact@lofia.com', logo: '/icons/icon.svg' }`
 - **Logo** : cercle bordeaux + double anneau doré + trou de serrure blanc — voir composant `LogoLofia`
-- **Favicon** : même icône serrure — `public/favicon.svg` et `public/icons/icon.svg` ✅ mis à jour
-- **manifest.json** : ✅ mis à jour (name: "LOFIA. — Immobilier Togo", theme_color: #8B1A2E)
-- ✅ `package.json` name → "lofia-immo" mis à jour
+- **Favicon** : même icône serrure — `public/favicon.svg` et `public/icons/icon.svg` ✅
+- **manifest.json** : ✅ à jour (name: "LOFIA. — Immobilier Togo", theme_color: #8B1A2E)
+- **package.json** : ✅ name → "lofia-immo"
 
 ## 3. Deux catégories principales
 1. **VENTE** (terrains, maisons, villas, immeubles, local commercial) → soumission + approbation modérateur
@@ -35,15 +36,19 @@ Stack : **Next.js 14.2.29** + React 18.3.1 + TypeScript 5.6 + **Tailwind CSS v3.
 
 ## 5. Architecture Next.js 14 App Router
 Route groups dans `src/app/` :
-- `(public)` — pages publiques : `/`, `/vente`, `/location`, `/biens/[slug]`, `/proprietaire/[id]`
+- `(public)` — pages publiques : `/`, `/vente`, `/location`, `/biens/[slug]`, `/proprietaire/[id]`, `/autour`, `/conditions`, `/faq`
 - `(auth)` — `/connexion`, `/inscription`
 - `(dashboard)` — `/mon-espace/*`, `/moderateur/*`, `/admin/*` (layout unifié avec sidebar + bottom nav)
+
+**Pages spéciales racine :** `not-found.tsx` (404 stylisée), `robots.ts` (robots.txt dynamique), `sitemap.ts` (sitemap.xml dynamique)
 
 **Pattern Suspense obligatoire** : tout composant utilisant `useSearchParams()` doit être dans un Suspense boundary.
 Pattern : `page.tsx` = wrapper Suspense, `XClient.tsx` = composant réel.
 
-**Middleware** : `src/middleware.ts` protège `/mon-espace`, `/moderateur`, `/admin` → redirect `/connexion?next=<path>` si non authentifié.
-Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers statiques (.svg, .png, etc.)
+**Middleware** : `src/middleware.ts` protège `/mon-espace`, `/moderateur`, `/admin`
+- Non authentifié → redirect `/connexion?next=<path>`
+- Modérateur/Admin sans rôle → redirect `/mon-espace`
+- Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers statiques (.svg, .png, etc.)
 
 **Supabase client** :
 - Côté client : `import { supabase } from '@/lib/supabase/client'`
@@ -52,7 +57,7 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 ## 6. Base de données Supabase
 **Projet ID** : `frxcxnzgdlumbjkgdozs`
 
-**Migrations exécutées (dans l'ordre, fichiers réels) :**
+**Migrations exécutées (dans l'ordre, 11 fichiers réels) :**
 - `001_init.sql` — profiles, biens, documents, avis, reservations, conversations, conversation_messages, favoris, messages_contact, notifications, signalements + RLS + index
 - `002_messagerie_reservations_notifs.sql` — mises à jour messagerie, réservations, notifications
 - `003_sequestre.sql` — colonnes séquestre, trigger `trg_liberation_fonds`, fonctions `confirmer_arrivee()` et `liberer_fonds_sequestre()`
@@ -62,6 +67,8 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 - `012_auto_termine_reservations.sql` — marquage automatique `statut=termine` après date_fin
 - `013_increment_vues_avis_fixes.sql` — fonction RPC `increment_vues`, correctifs avis
 - `014_fix_avis_schema.sql` — corrections finales schéma avis
+- `015_security_hardening.sql` — durcissement sécurité RLS étendu
+- `016_storage_cni_restrict.sql` — restriction bucket storage CNI
 
 **Tables principales et colonnes clés :**
 - `profiles` — id, role, nom, phone, bio, is_diaspora, avatar_url, cni_recto_url, cni_verso_url, identite_verifiee
@@ -70,7 +77,7 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 - `conversations` — id, bien_id, **proprietaire_id**, **locataire_id**, created_at (PAS user1_id/user2_id, PAS updated_at)
 - `conversation_messages` — id, conversation_id, sender_id, contenu, lu, created_at (PAS messages_prive)
 - `favoris`, `messages_contact`, `moderation_log`, `signalements`
-- `notifications` — user_id, type, titre, corps, lien, lu
+- `notifications` — user_id, type, titre, corps, lien, lu, created_at
 - `documents` — bien_id, type (titre_foncier/attestation/autre), url, nom, verified
 - `avis` — bien_id, reservation_id, auteur_id, proprietaire_id, sujet_id, note (1-5), commentaire, type (locataire_note_proprio | proprio_note_locataire)
 
@@ -84,36 +91,39 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 - Remote patterns autorisés dans next.config.mjs : `frxcxnzgdlumbjkgdozs.supabase.co` et `*.supabase.co`
 
 ## 8. Edge Functions
-- `supabase/functions/liberer-fonds/index.ts` — cron `*/5 * * * *` appelant `liberer_fonds_sequestre()`
-- `supabase/functions/create-fedapay-transaction/index.ts` — création transaction FedaPay
-- `supabase/functions/confirm-fedapay-payment/index.ts` — confirmation paiement FedaPay
+- `supabase/functions/liberer-fonds/index.ts` — cron `*/5 * * * *` appelant `liberer_fonds_sequestre()` + `terminer_sejours_expires()`
+- `supabase/functions/create-fedapay-transaction/index.ts` — création transaction FedaPay (vérifie auth + ownership)
+- `supabase/functions/confirm-fedapay-payment/index.ts` — confirmation paiement FedaPay, insère 2 notifications (locataire + proprio), auto-détecte sandbox vs live
 
 ## 9. Fichiers de configuration clés
 | Fichier | Rôle |
 |---|---|
-| `src/lib/brand.ts` | Nom (Dôme), logo (null), tagline, domaine (logikahome.com), contacts |
+| `src/lib/brand.ts` | Nom LOFIA., logo, tagline, domaine lofia.com, contacts |
 | `src/lib/constants.ts` | VILLES_TOGO, TYPES_BIEN, EQUIPEMENTS, PRIX_RANGES_*, COMMISSION, RAYON_OPTIONS, TYPES_PAR_CATEGORIE, MOTIFS_SIGNALEMENT |
 | `src/lib/utils.ts` | cn(), formatPrix(), formatDate(), formatDateCourt(), haversine(), formatDistance(), masquerTelephone(), slugify(), nbNuits(), formatRelative() |
 | `src/app/globals.css` | Design system Tailwind v3 (@layer base/components : .card-bien, .btn-*, .badge-*, .wrap, .section, .prix, .input-field, .label-field, .stat-card, .dashboard-card) |
-| `tailwind.config.ts` | Palette Dôme (primary=bordeaux, accent=or, cream, or-pale, brun-nuit, brun-doux, vert-foret) |
+| `tailwind.config.ts` | Palette LOFIA. (primary=bordeaux, accent=or, cream, or-pale, brun-nuit, brun-doux, vert-foret) |
 | `.env` | NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY + NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY + FEDAPAY_SECRET_KEY + NEXT_PUBLIC_GOOGLE_MAPS_KEY |
 | `next.config.mjs` | Config Next.js — images remotePatterns + security headers (X-Frame-Options, HSTS, etc.) |
-| `supabase/migrations/` | 9 fichiers SQL |
-| `public/manifest.json` | PWA manifest — ⚠️ contient encore "Boris Immo" — à mettre à jour |
-| `public/sw.js` | Service Worker — Network First strategy (CACHE_NAME: 'lofia-immo-v1') |
+| `supabase/migrations/` | 11 fichiers SQL |
+| `public/manifest.json` | PWA manifest ✅ à jour — "LOFIA. — Immobilier Togo", theme_color #8B1A2E |
+| `public/sw.js` | Service Worker — Cache First pour images Supabase + assets Next.js (CACHE_NAME: 'lofia-immo-v1') |
 
 ## 10. État d'avancement — ✅ TOUT COMPLÉTÉ
 
 ### Infrastructure
 - Next.js 14.2.29 App Router, TypeScript 5.6, Tailwind CSS v3.4.17
-- Design system complet (`globals.css` avec classes utilitaires Dôme)
+- Design system complet (`globals.css` avec classes utilitaires LOFIA.)
 - Supabase client/server (@supabase/ssr 0.5.2 + @supabase/supabase-js 2.101.1)
-- Middleware auth (cookie sync + routes protégées)
+- Middleware auth (cookie sync + routes protégées, `getSession()` pas `getUser()`)
 - Zustand stores : `authStore` + `dashboardModeStore` (persisté localStorage `lofia-dashboard-mode`)
 - Types TypeScript complets (`src/types/immobilier.ts`)
-- PWA : manifest.json + sw.js + SwRegister
+- PWA complète : manifest.json + sw.js + SwRegister + icônes PNG réelles (96/192/512px + apple-touch-icon)
 - `TYPES_PAR_CATEGORIE` dans constants.ts (Record<string, string[]>)
 - Security headers (HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy)
+- SEO complet + sitemap.xml + robots.txt dynamiques
+- Carte OpenStreetMap via iframe OSM sur fiches biens (react-leaflet remplacé)
+- Système de notifications complet (Realtime, tous événements couverts)
 
 ### Dépendances notables
 - Radix UI (accordion, alert-dialog, avatar, checkbox, dialog, dropdown, label, popover, progress, scroll-area, select, separator, slot, switch, tabs, toast, tooltip)
@@ -128,8 +138,11 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 - `/vente` — VenteClient + Suspense wrapper, filtres géo/type/budget
 - `/location` — LocationClient + Suspense wrapper, tabs courte/longue durée
 - `/biens` — redirect vers /vente
-- `/biens/[slug]` — Server Component + BienDetailClient + ReservationPanel + SignalementModal (carrousel Embla, avis)
+- `/biens/[slug]` — Server Component + BienDetailClient + ReservationPanel + SignalementModal (carrousel Embla, carte OSM, avis)
 - `/proprietaire/[id]` — Server Component + ProprietaireClient
+- `/autour` — géolocalisation navigator + rayon configurable (500m→10km), fallback haversine, grid BienCard
+- `/conditions` — page statique CGU
+- `/faq` — page statique FAQ avec accordéons
 
 ### Auth (`src/app/(auth)/`)
 - `/connexion` — Suspense wrapper + ConnexionClient
@@ -137,6 +150,7 @@ Matcher : tout sauf `_next/static`, `_next/image`, `favicon.ico`, fichiers stati
 
 ### Dashboard (`src/app/(dashboard)/`)
 Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier central)
+Chaque route a un fichier `loading.tsx` dédié.
 
 - `/mon-espace` — stats + finance mode-aware (proprietaire/locataire)
 - `/mon-espace/publier` — 4 étapes: type→détails→localisation→photos, GPS, upload Storage
@@ -148,6 +162,7 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - `/mon-espace/favoris` — grid BienCard avec onUnfavorite
 - `/mon-espace/profil` — edit profil + avatar + CNI recto/verso
 - `/mon-espace/paiement/[id]` — FedaPay widget, GPS révélé après paiement, reçu
+- `/mon-espace/notifications` — liste notifications avec marquage lu
 - `/moderateur` — dashboard file d'attente (stats: en_attente/approuvés/rejetés/signalements)
 - `/moderateur/biens/[id]` — approve/reject + notification proprio
 - `/moderateur/signalements` — liste signalements modérateur
@@ -159,12 +174,12 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 ### Composants (`src/components/`)
 **Layout :**
 - `layout/Navbar.tsx` — sticky header, logo, scroll effect, auth-aware, notif bell, user dropdown
-- `layout/Footer.tsx` — pied de page desktop
+- `layout/Footer.tsx` — pied de page desktop (masqué mobile)
 - `layout/BottomNav.tsx` — nav mobile fixe en bas (safe-area-pb)
-- `layout/NotifBell.tsx` — cloche realtime **(export default, pas named)**
+- `layout/NotifBell.tsx` — cloche realtime **(export default, pas named)** — état local, channel `notifs-<userId>`
 
 **Home :**
-- `home/HeroSection.tsx` — gradient bordeaux, barre de recherche + géoloc, tabs, stats (247 publiés / 94 hôtes / 12 villes), wave SVG
+- `home/HeroSection.tsx` — gradient bordeaux, barre de recherche + géoloc, tabs, stats, wave SVG
 - `home/StatsSection.tsx`
 - `home/CategoriesSection.tsx`
 - `home/BiensFeatured.tsx` — Server Component
@@ -176,16 +191,21 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - `biens/BienCard.tsx` — prop `onUnfavorite?: (id: string) => void`
 - `biens/BienCardSkeleton.tsx`
 - `biens/GeoFilterBar.tsx` — contrôle géoloc + sélecteur rayon
+- `biens/MapApproximatif.tsx` — carte OSM iframe (non utilisée directement, intégrée dans BienDetailClient)
 
 **UI :**
 - `ui/AvisModal.tsx` — notation 1-5 étoiles, commentaire 500 chars, insert table avis
 - `ui/ConfirmModal.tsx` — modal de confirmation générique
+- `ui/DashboardSkeleton.tsx` — skeleton chargement dashboard
 
 **Providers :**
 - `providers/AuthProvider.tsx` — appelle `useAuthStore.init()` au mount
 - `providers/SwRegister.tsx` — enregistrement Service Worker PWA
 
-✅ **Composant `LogoLofia` (src/components/lofia/LogoLofia.tsx) : CRÉÉ — utiliser partout (voir §15.4)**
+**Logo :**
+- `lofia/LogoLofia.tsx` ✅ — props : `variant?: 'dark' | 'light'`, `className?: string` (voir §15.4)
+
+**Dossiers vides (créés, inutilisés) :** `src/components/map/`, `src/components/search/`, `src/hooks/`
 
 ## 11. Décisions techniques importantes
 - **Commissions** : 8% payé par le locataire (`COMMISSION.VOYAGEUR_PCT`), 3% prélevé sur le paiement hôte (`COMMISSION.HOTE_PCT`) — `montant_proprio` calculé côté DB
@@ -193,8 +213,10 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - **Géolocalisation** : Haversine côté client (`haversine()` dans utils.ts) ; GPS exact révélé après paiement seulement
 - **Prix** : FCFA uniquement — toujours formater avec `formatPrix()` depuis `@/lib/utils` (pas `formatFCFA`)
 - **Photos** : Supabase Storage bucket `biens-photos`
-- **Paiement** : simulation FedaPay sandbox — 3 Edge Functions (create, confirm, liberer-fonds)
+- **Paiement** : FedaPay sandbox — 3 Edge Functions (create, confirm, liberer-fonds)
 - **Realtime** : `supabase.removeChannel(supabase.channel(name))` avant toute création de channel (React Strict Mode double-mount)
+- **Auth** : `getSession()` (pas `getUser()`) dans middleware et authStore — évite le spinner permanent
+- **Carte** : iframe OSM (pas react-leaflet — `TypeError: r is not a function` sur react-leaflet avec Next.js 14)
 - **`Array.from(new Set(...))`** au lieu de `[...new Set(...)]` (TS sans downlevelIteration)
 - **Apostrophes JSX** : utiliser `&apos;` ou double quotes `"l'adresse"` (pas de guillemets simples dans JSX string literals)
 - **`next.config.mjs`** : extension obligatoire (Next.js 14.2.29 ne supporte pas `.ts`)
@@ -205,25 +227,25 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - Security headers sur toutes les routes : X-Frame-Options: DENY, HSTS, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy
 - RLS activé sur toutes les tables avec `(select auth.uid())` (pas `auth.uid()` direct)
 - Trigger `prevent_role_escalation` sur profiles
+- Migration 015 : security hardening étendu
+- Migration 016 : restriction bucket storage CNI
 - Secure email change : à activer dans Supabase Dashboard → Auth
 
 ## 13. Ce qui reste à faire
-- [x] ~~Créer composant logo~~ → `src/components/lofia/LogoLofia.tsx` ✅ créé
-- [x] ~~Mettre à jour `public/manifest.json`~~ → "LOFIA. — Immobilier Togo", theme_color #8B1A2E ✅
-- [x] ~~Mettre à jour favicon et icône PWA~~ → `public/favicon.svg` + `public/icons/icon.svg` ✅
-- [x] ~~Mettre à jour `src/lib/brand.ts`~~ → name: 'LOFIA.', logo: '/icons/icon.svg' ✅
-- [x] ~~Intégrer `LogoLofia` dans Navbar, Footer, Dashboard layout~~ → ✅ intégré dans les 3 (Navbar l.71, Footer l.18, Dashboard layout l.129+226)
-- [ ] Appliquer intégralement le design system (section 15) sur toutes les pages existantes
-- [x] ~~Mettre à jour `package.json` : name → "lofia-immo"~~ → ✅ mis à jour
-- [ ] Remplacer résidus "Dôme" dans commentaires : `globals.css` (4 occurrences), `tailwind.config.ts` (1 occurrence)
+- [x] ~~Créer composant logo~~ ✅
+- [x] ~~Mettre à jour manifest.json, favicon, icônes PWA~~ ✅ (PNG 96/192/512 + apple-touch-icon réels)
+- [x] ~~Mettre à jour brand.ts~~ ✅ (lofia.com)
+- [x] ~~Intégrer LogoLofia dans Navbar, Footer, Dashboard~~ ✅
+- [x] ~~Mettre à jour package.json~~ ✅ (lofia-immo)
+- [x] ~~SEO~~ ✅ (metadata, sitemap, robots, partage WhatsApp)
+- [x] ~~Système notifications~~ ✅ (tous événements, Realtime)
+- [x] ~~PWA icônes réelles~~ ✅
+- [ ] Remplacer résidus "Dôme" dans commentaires : `globals.css` (lignes 7, 83, 111, 194) + `tailwind.config.ts` (lignes 18, 45) — **6 occurrences**
 - [ ] Intégration FedaPay réelle (remplacer sandbox — clés prod disponibles)
 - [ ] Système d'avis/reviews UI sur ProprietairePage (table `avis` existe, AvisModal existe)
 - [ ] Page `/recherche` globale cross-catégories
-- [ ] Déploiement Vercel + configuration domaine logikahome.com
-- [ ] Configurer Site URL dans Supabase Dashboard → Auth → URL Configuration
-- [ ] Déployer les 3 Edge Functions sur Supabase
-- [ ] Upload logo Dôme réel dans `src/lib/brand.ts` (logo: null actuellement)
-- [ ] Icônes PWA réelles (actuellement SVG placeholder `/icons/icon.svg`)
+- [ ] Déploiement Vercel + configuration domaine `lofia.com`
+- [ ] Configurer Site URL dans Supabase Dashboard → Auth → URL Configuration (`lofia.com`)
 - [ ] Clé Google Maps `NEXT_PUBLIC_GOOGLE_MAPS_KEY` dans `.env` (présente mais vide)
 
 ## 14. Quirks techniques — ne jamais reproduire ces erreurs
@@ -235,12 +257,14 @@ Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier centr
 - La fonction de formatage prix est **`formatPrix()`** dans `src/lib/utils.ts` — il n'existe PAS de `formatFCFA()` ni de `src/lib/utils/formatFCFA.ts`
 - Tailwind CSS est **v3** (pas v4) — utiliser `@layer base/components/utilities`, PAS `@theme` ni `@import "tailwindcss"`
 - Les noms Tailwind dans `tailwind.config.ts` sont : `primary` (bordeaux), `accent` (or) — PAS `bordeaux`/`or` directement
-- Les classes CSS utilitaires Dôme sont dans `globals.css` : `.btn-primary`, `.btn-accent`, `.badge-vente`, `.prix`, `.card-bien`, `.input-field`, etc.
+- Les classes CSS utilitaires LOFIA. sont dans `globals.css` : `.btn-primary`, `.btn-accent`, `.badge-vente`, `.prix`, `.card-bien`, `.input-field`, etc.
 - `src/lib/config.ts` n'existe pas — ne jamais l'importer
+- Utiliser `getSession()` et non `getUser()` dans middleware/authStore — `getUser()` cause un spinner permanent
+- Ne PAS utiliser react-leaflet — remplacé par iframe OSM (TypeError au runtime avec Next.js 14)
 
 ---
 
-## 15. ⚠️ DESIGN SYSTEM DÔME — RÈGLES VISUELLES ABSOLUES
+## 15. ⚠️ DESIGN SYSTEM LOFIA. — RÈGLES VISUELLES ABSOLUES
 
 > S'appliquent à CHAQUE composant, CHAQUE page, CHAQUE modification.
 > Ne jamais utiliser les couleurs par défaut de shadcn/ui ou Tailwind sans les remplacer.
@@ -261,12 +285,17 @@ colors: {
     500: '#8B1A2E',    // ← couleur principale
     600: '#6B0F1E',
     700: '#4D0A15',
+    800: '#31060D',
+    900: '#180305',
     foreground: '#ffffff',
   },
   accent: {            // ← OR
     DEFAULT: '#D4A832',
     50:  '#FDF8E8',
     100: '#F8EDBE',
+    200: '#F2DF8C',
+    300: '#EBD05C',
+    400: '#E3C23A',
     500: '#D4A832',
     600: '#B08A28',
     700: '#8C6D1F',
@@ -291,7 +320,7 @@ colors: {
 }
 ```
 
-### 15.2 Classes CSS utilitaires Dôme (globals.css)
+### 15.2 Classes CSS utilitaires LOFIA. (globals.css)
 
 Ces classes sont prêtes à l'emploi — **les utiliser en priorité** :
 
@@ -313,20 +342,29 @@ Ces classes sont prêtes à l'emploi — **les utiliser en priorité** :
 | `.badge-verifie` | Badge identité vérifiée |
 | `.badge-en-attente` | Badge en attente |
 | `.badge-geo` | Badge distance géo |
+| `.badge-primary` | Badge primary |
+| `.badge-accent` | Badge accent/or |
+| `.badge-gray` | Badge gris neutre |
 | `.card-bien` | Card propriété (rounded-2xl, border primary-50, hover shadow) |
-| `.input-field` | Champ de saisie stylé Dôme |
+| `.input-field` | Champ de saisie stylé LOFIA. |
 | `.label-field` | Label de champ |
 | `.prix` | Prix FCFA (`font-black text-primary-500`) |
 | `.wrap` | Conteneur max-w-7xl centré |
 | `.section` | Section `py-12 md:py-16` |
 | `.stat-card` | Card statistique dashboard |
 | `.dashboard-card` | Card dashboard générique |
+| `.page-header` | En-tête de page |
 | `.page-title` | Titre de page |
 | `.page-subtitle` | Sous-titre de page |
 | `.section-title` | Titre de section |
+| `.section-subtitle` | Sous-titre de section |
 | `.skeleton` | Skeleton loader animé |
-| `.pb-nav` | Padding bottom pour bottom nav mobile |
+| `.pb-nav` | Padding bottom pour bottom nav mobile (`pb-20 md:pb-0`) |
 | `.safe-area-pb` | Safe area iOS |
+| `.no-scrollbar` | Masquer scrollbar |
+| `.map-marker-vente` | Marqueur carte vente |
+| `.map-marker-courte` | Marqueur carte courte durée |
+| `.map-marker-longue` | Marqueur carte longue durée |
 
 ### 15.3 Référence rapide couleurs Tailwind
 
@@ -368,6 +406,8 @@ import { LogoLofia } from '@/components/lofia/LogoLofia'
 <LogoLofia variant="dark" className="text-2xl" />
 <LogoLofia variant="dark" className="text-3xl" />
 ```
+
+**Props :** `variant?: 'dark' | 'light'` (défaut: 'dark'), `className?: string`
 
 **Anatomie du logo :**
 - `L` + `FIA.` → texte Inter Black, couleur selon variant (bordeaux ou blanc)
@@ -425,7 +465,7 @@ import { formatPrix } from '@/lib/utils'
 ```tsx
 // src/store/dashboardModeStore.ts
 // type DashboardMode = 'proprietaire' | 'locataire'
-// Persisté: localStorage key 'dome-dashboard-mode'
+// Persisté: localStorage key 'lofia-dashboard-mode'
 
 // Propriétaire → header bg-primary-500 (bordeaux)
 // Locataire    → header bg-[#2D6A4F] (vert forêt)
@@ -445,9 +485,9 @@ import { formatPrix } from '@/lib/utils'
 
 ```
 next/image        — obligatoire, jamais <img>
-Google Maps       — dynamic import { ssr: false }
+Carte             — iframe OSM (jamais react-leaflet)
 Listes            — pagination 12 items max
-Skeletons         — obligatoires (BienCardSkeleton + classe .skeleton)
+Skeletons         — obligatoires (BienCardSkeleton + DashboardSkeleton + classe .skeleton)
 Animations        — légères uniquement (transition-all duration-200/300, framer-motion ok)
 Vidéo autoplay    — interdit
 Carousel photos   — Embla Carousel (embla-carousel-react)
@@ -465,11 +505,11 @@ Charts admin      — Recharts
 - [ ] Inputs : label visible + `.input-field` + focus primary ?
 - [ ] Skeleton screen implémenté ?
 - [ ] Police minimum 14px sur mobile ?
-- [ ] Logo : composant `LogoDome` utilisé ?
+- [ ] Logo : composant `LogoLofia` utilisé ?
 - [ ] Couleur header : correspond au tableau 15.9 ?
-- [ ] Classes CSS utilitaires Dôme utilisées (`.btn-primary`, `.card-bien`, etc.) ?
+- [ ] Classes CSS utilitaires LOFIA. utilisées (`.btn-primary`, `.card-bien`, etc.) ?
 
 ---
 
-*LOFIA. — CLAUDE.md v4.1 — Synchronisation état réel (localStorage, LogoLofia intégré, package.json) — Avril 2026*
+*LOFIA. — CLAUDE.md v5.0 — Audit complet et synchronisation état réel — Avril 2026*
 *Ce fichier remplace tous les fichiers CLAUDE.md précédents.*
