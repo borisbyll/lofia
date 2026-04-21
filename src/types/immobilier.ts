@@ -33,7 +33,7 @@ export interface Bien {
   prix_type: string | null
   prix_negociable: boolean
   superficie: number | null
-  nb_pieces: number | null
+  nb_salons: number | null
   nb_chambres: number | null
   nb_salles_bain: number | null
   nb_etages: number | null

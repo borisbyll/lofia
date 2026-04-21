@@ -192,7 +192,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                   {bien.nb_chambres != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><BedDouble size={14} className="text-primary-500" />{bien.nb_chambres} ch.</div>}
                   {bien.nb_salles_bain != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><Bath size={14} className="text-primary-500" />{bien.nb_salles_bain} sdb</div>}
                   {bien.superficie != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><Maximize2 size={14} className="text-primary-500" />{bien.superficie} m²</div>}
-                  {bien.nb_pieces != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><Building2 size={14} className="text-primary-500" />{bien.nb_pieces} pièces</div>}
+                  {bien.nb_salons != null && <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold"><Building2 size={14} className="text-primary-500" />{bien.nb_salons} salon{bien.nb_salons > 1 ? 's' : ''}</div>}
                 </div>
                 <p className="text-2xl sm:text-3xl font-black prix">
                   {formatPrix(bien.prix)}

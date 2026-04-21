@@ -20,7 +20,7 @@ export default function EditBienPage() {
   const [form, setForm] = useState({
     titre: '', description: '', prix: '', ville: '', commune: '',
     adresse: '', quartier: '', meuble: false, prix_negociable: false,
-    surface: '', nb_pieces: '', nb_chambres: '', nb_sdb: '',
+    surface: '', nb_salons: '', nb_chambres: '', nb_sdb: '',
     equipements: [] as string[], video_url: '',
   })
   const [photos, setPhotos] = useState<string[]>([])
@@ -34,7 +34,7 @@ export default function EditBienPage() {
   const loadBien = async () => {
     const { data, error } = await supabase
       .from('biens')
-      .select('id, titre, description, prix, ville, commune, adresse, quartier, prix_negociable, superficie, nb_pieces, nb_chambres, nb_salles_bain, equipements, photos, photo_principale')
+      .select('id, titre, description, prix, ville, commune, adresse, quartier, prix_negociable, superficie, nb_salons, nb_chambres, nb_salles_bain, equipements, photos, photo_principale')
       .eq('id', bienId)
       .eq('owner_id', user!.id)
       .single()
@@ -52,7 +52,7 @@ export default function EditBienPage() {
       meuble:        false,
       prix_negociable: data.prix_negociable ?? false,
       surface:       String(data.superficie ?? ''),
-      nb_pieces:     String(data.nb_pieces ?? ''),
+      nb_salons:     String(data.nb_salons ?? ''),
       nb_chambres:   String(data.nb_chambres ?? ''),
       nb_sdb:        String(data.nb_salles_bain ?? ''),
       equipements:   data.equipements ?? [],
@@ -99,10 +99,10 @@ export default function EditBienPage() {
         quartier:    form.quartier || null,
         meuble:      form.meuble,
         prix_negociable: form.prix_negociable,
-        surface:     form.surface ? Number(form.surface) : null,
-        nb_pieces:   form.nb_pieces ? Number(form.nb_pieces) : null,
-        nb_chambres: form.nb_chambres ? Number(form.nb_chambres) : null,
-        nb_sdb:      form.nb_sdb ? Number(form.nb_sdb) : null,
+        superficie:    form.surface ? Number(form.surface) : null,
+        nb_salons:     form.nb_salons ? Number(form.nb_salons) : null,
+        nb_chambres:   form.nb_chambres ? Number(form.nb_chambres) : null,
+        nb_salles_bain: form.nb_sdb ? Number(form.nb_sdb) : null,
         equipements: form.equipements,
         video_url:   form.video_url || null,
         photos:      [...photos, ...newUrls],
@@ -161,8 +161,8 @@ export default function EditBienPage() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="label-field">Pièces</label>
-              <input type="number" value={form.nb_pieces} onChange={e => set('nb_pieces', e.target.value)}
+              <label className="label-field">Salons</label>
+              <input type="number" value={form.nb_salons} onChange={e => set('nb_salons', e.target.value)}
                 className="input-field" min="0" />
             </div>
             <div>

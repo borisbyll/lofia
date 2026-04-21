@@ -27,7 +27,7 @@ interface FormData {
   prix_type:    'total' | 'par_mois' | 'par_nuit'
   prix_negociable: boolean
   superficie:   string
-  nb_pieces:    string
+  nb_salons:    string
   nb_chambres:  string
   nb_salles_bain: string
   nb_etages:    string
@@ -49,7 +49,7 @@ interface FormData {
 const initForm: FormData = {
   categorie: '', type_bien: '', type_location: '', titre: '',
   description: '', prix: '', prix_type: 'total', prix_negociable: false,
-  superficie: '', nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '', meuble: false, equipements: [],
+  superficie: '', nb_salons: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '', meuble: false, equipements: [],
   ville: '', commune: '', adresse: '', quartier: '', lat: '', lng: '',
   photos: [], photoUrls: [], videoFile: null,
 }
@@ -259,7 +259,7 @@ export default function PublierBienPage() {
       }
 
       if (form.superficie)    bienPayload.superficie    = Number(form.superficie)
-      if (form.nb_pieces)     bienPayload.nb_pieces     = Number(form.nb_pieces)
+      if (form.nb_salons)     bienPayload.nb_salons     = Number(form.nb_salons)
       if (form.nb_chambres)   bienPayload.nb_chambres   = Number(form.nb_chambres)
       if (form.nb_salles_bain) bienPayload.nb_salles_bain = Number(form.nb_salles_bain)
       if (form.nb_etages)     bienPayload.nb_etages     = Number(form.nb_etages)
@@ -350,7 +350,7 @@ export default function PublierBienPage() {
                       type_bien: '',
                       type_location: '',
                       prix_type: derivePrixType(cat, ''),
-                      meuble: false, nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
+                      meuble: false, nb_salons: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
                     }))}
                     className={cn(
                       'p-4 rounded-xl border-2 text-sm font-bold transition-all',
@@ -382,7 +382,7 @@ export default function PublierBienPage() {
                         type_location: v,
                         type_bien: '',
                         prix_type: derivePrixType(prev.categorie, v),
-                        meuble: false, nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
+                        meuble: false, nb_salons: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
                       }))}
                       className={cn(
                         'p-4 rounded-xl border-2 text-sm font-bold transition-all',
@@ -408,7 +408,7 @@ export default function PublierBienPage() {
                       onClick={() => setForm(prev => ({
                         ...prev,
                         type_bien: t,
-                        meuble: false, nb_pieces: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
+                        meuble: false, nb_salons: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '',
                       }))}
                       className={cn(
                         'p-3 rounded-xl border text-sm font-medium text-left transition-all',
@@ -451,15 +451,20 @@ export default function PublierBienPage() {
             {/* Prix — unité déduite automatiquement */}
             <div>
               <label className="label-field">{getPrixLabel(form.categorie, form.type_location)} *</label>
-              <div className="relative flex gap-2">
-                <div className="relative flex-1">
-                  <DollarSign size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="number" value={form.prix}
-                    onChange={e => set('prix', e.target.value)}
-                    placeholder="0" className="input-field pl-9" min="0" />
-                </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={form.prix ? Number(form.prix).toLocaleString('fr-FR') : ''}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\s/g, '').replace(/[^\d]/g, '')
+                    set('prix', raw)
+                  }}
+                  placeholder="0"
+                  className="input-field flex-1"
+                />
                 <span className="flex items-center px-3.5 bg-primary-50 border border-primary-100 rounded-xl text-sm font-semibold text-primary-600 whitespace-nowrap">
-                  {getPrixBadge(form.categorie, form.type_location)}
+                  FCFA {getPrixBadge(form.categorie, form.type_location)}
                 </span>
               </div>
             </div>
@@ -486,9 +491,9 @@ export default function PublierBienPage() {
             {showPieces(form.type_bien) && (
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="label-field">Pièces</label>
-                  <input type="number" value={form.nb_pieces}
-                    onChange={e => set('nb_pieces', e.target.value)}
+                  <label className="label-field">Salons</label>
+                  <input type="number" value={form.nb_salons}
+                    onChange={e => set('nb_salons', e.target.value)}
                     placeholder="0" className="input-field" min="0" />
                 </div>
                 <div>
@@ -738,10 +743,10 @@ export default function PublierBienPage() {
                   <span className="font-semibold">{form.superficie} m²</span>
                 </div>
               )}
-              {showPieces(form.type_bien) && (form.nb_chambres || form.nb_salles_bain) && (
+              {showPieces(form.type_bien) && (form.nb_salons || form.nb_chambres || form.nb_salles_bain) && (
                 <div className="flex justify-between text-gray-600">
-                  <span>Chambres / SDB</span>
-                  <span className="font-semibold">{form.nb_chambres || '–'} ch. / {form.nb_salles_bain || '–'} sdb</span>
+                  <span>Salons / Ch. / SDB</span>
+                  <span className="font-semibold">{form.nb_salons || '–'} / {form.nb_chambres || '–'} / {form.nb_salles_bain || '–'}</span>
                 </div>
               )}
               {showMeuble(form.type_bien) && (

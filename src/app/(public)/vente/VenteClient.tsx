@@ -34,7 +34,7 @@ export default function VentePage({ initialBiens = [] }: { initialBiens?: Bien[]
   const load = async () => {
     setLoading(true)
     let q = supabase.from('biens')
-      .select('id,slug,titre,categorie,type_bien,prix,prix_type,ville,commune,quartier,photos,photo_principale,superficie,nb_pieces,nb_chambres,nb_salles_bain,vues,favoris_count,statut,is_featured,owner_id,latitude,longitude, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
+      .select('id,slug,titre,categorie,type_bien,prix,prix_type,ville,commune,quartier,photos,photo_principale,superficie,nb_salons,nb_chambres,nb_salles_bain,vues,favoris_count,statut,is_featured,owner_id,latitude,longitude, proprietaire:profiles!owner_id(id,nom,avatar_url,identite_verifiee)')
       .eq('statut', 'publie').eq('categorie', 'vente')
       .order('is_featured', { ascending: false })
       .order('publie_at', { ascending: false })
