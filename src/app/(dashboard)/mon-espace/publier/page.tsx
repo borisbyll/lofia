@@ -273,7 +273,9 @@ export default function PublierBienPage() {
       }
       router.push('/mon-espace/mes-biens')
     } catch (err: any) {
-      toast.error(err.message ?? 'Erreur lors de la publication')
+      console.error('[publier] erreur:', err)
+      const msg = err?.message || err?.error_description || 'Erreur lors de la publication'
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
