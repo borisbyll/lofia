@@ -11,7 +11,7 @@ import {
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
-import { VILLES_TOGO, TYPES_PAR_CATEGORIE, EQUIPEMENTS } from '@/lib/constants'
+import { VILLES_TOGO, TYPES_PAR_CATEGORIE, TYPES_BIEN, EQUIPEMENTS } from '@/lib/constants'
 import { cn, slugify } from '@/lib/utils'
 
 /* ── Types ─────────────────────────────────────────────────────── */
@@ -84,6 +84,10 @@ function getPrixBadge(cat: string, typeLoc: string) {
 }
 
 // Champs conditionnels selon le type de bien
+// Convertit le label affiché ("Appartement") en value DB ("appartement")
+const labelToValue = (label: string) =>
+  (TYPES_BIEN as readonly { value: string; label: string }[]).find(t => t.label === label)?.value ?? label.toLowerCase()
+
 const showMeuble     = (t: string) => RESIDENTIELS.includes(t)
 const showPieces     = (t: string) => RESIDENTIELS.includes(t)
 const showEtages     = (t: string) => ['Maison', 'Villa', 'Immeuble'].includes(t)
@@ -238,7 +242,7 @@ export default function PublierBienPage() {
         slug,
         description:  form.description.trim(),
         categorie:    form.categorie,
-        type_bien:    form.type_bien,
+        type_bien:    labelToValue(form.type_bien),
         type_location: form.categorie === 'location' && form.type_location ? form.type_location : null,
         prix:         Number(form.prix),
         prix_type:    form.prix_type,
