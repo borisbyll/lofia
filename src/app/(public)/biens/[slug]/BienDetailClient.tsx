@@ -14,7 +14,7 @@ import toast from 'react-hot-toast'
 import { formatPrix, formatDate, cn } from '@/lib/utils'
 import { BRAND } from '@/lib/brand'
 import { useAuthStore } from '@/store/authStore'
-import { useCurrencyStore, formatConverted, CURRENCIES } from '@/store/currencyStore'
+
 import { supabase } from '@/lib/supabase/client'
 import type { Bien, Avis } from '@/types/immobilier'
 import BienCard from '@/components/biens/BienCard'
@@ -34,7 +34,7 @@ interface Props {
 
 export default function BienDetailClient({ bien, avis, similaires }: Props) {
   const { user } = useAuthStore()
-  const { selected, setSelected, rates, fetchRates } = useCurrencyStore()
+
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
 
@@ -199,33 +199,13 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 <div className="flex items-end gap-3 flex-wrap">
                   <div>
                     <p className="text-2xl sm:text-3xl font-black prix">
-                      {formatConverted(bien.prix, selected, rates)}
+                      {formatPrix(bien.prix)}
                       {bien.categorie === 'location' && (
                         <span className="text-xs sm:text-sm text-gray-400 font-normal ml-1.5">
                           {bien.type_location === 'courte_duree' ? '/nuit' : '/mois'}
                         </span>
                       )}
                     </p>
-                    {selected !== 'XOF' && (
-                      <p className="text-xs text-gray-400 mt-0.5">≈ {formatPrix(bien.prix)}</p>
-                    )}
-                  </div>
-                  {/* Sélecteur devise inline */}
-                  <div className="flex gap-1 flex-wrap mb-1">
-                    {CURRENCIES.map(c => (
-                      <button
-                        key={c.code}
-                        onClick={() => { setSelected(c.code); fetchRates() }}
-                        className={cn(
-                          'px-2 py-1 rounded-lg text-xs font-semibold transition-all border',
-                          selected === c.code
-                            ? 'bg-primary-500 text-white border-primary-500'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-primary-300'
-                        )}
-                      >
-                        {c.flag} {c.symbol}
-                      </button>
-                    ))}
                   </div>
                 </div>
 
