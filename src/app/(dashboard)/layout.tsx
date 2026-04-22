@@ -82,19 +82,19 @@ const adminItems = [
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
 // Profil accessible via avatar dans le header mobile → libère 1 slot
 const bottomProprietaire = [
-  { href: '/mon-espace',               label: 'Vue d\'ensemble', icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens',     label: 'Annonces',        icon: Building2 },
-  { href: '/mon-espace/publier',       label: 'Publier',         icon: Plus, accent: true },
-  { href: '/mon-espace/messagerie',    label: 'Messages',        icon: MessageCircle },
-  { href: '/mon-espace/notifications', label: 'Alertes',         icon: Bell },
+  { href: '/mon-espace',           label: 'Accueil',    icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens', label: 'Annonces',   icon: Building2 },
+  { href: '/mon-espace/publier',   label: 'Publier',    icon: Plus, accent: true },
+  { href: '/mon-espace/contrats',  label: 'Contrats',   icon: FileText },
+  { href: '/mon-espace/ventes',    label: 'Ventes',     icon: Home },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',               label: 'Vue d\'ensemble', icon: LayoutDashboard },
-  { href: '/mon-espace/reservations',  label: 'Réservations',   icon: CalendarCheck },
-  { href: '/mon-espace/publier',       label: 'Publier',        icon: Plus, accent: true },
-  { href: '/mon-espace/messagerie',    label: 'Messages',       icon: MessageCircle },
-  { href: '/mon-espace/notifications', label: 'Alertes',        icon: Bell },
+  { href: '/mon-espace',               label: 'Accueil',      icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',  label: 'Réservations', icon: CalendarCheck },
+  { href: '/mon-espace/publier',       label: 'Publier',      icon: Plus, accent: true },
+  { href: '/mon-espace/contrats',      label: 'Contrats',     icon: FileText },
+  { href: '/mon-espace/ventes',        label: 'Ventes',       icon: Home },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -282,6 +282,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
                       <CalendarCheck size={14} className="text-gray-400" /> Réservations
+                    </Link>
+                    <Link href="/mon-espace/messagerie"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                      <MessageCircle size={14} className="text-gray-400" /> Messages
+                    </Link>
+                    <Link href="/mon-espace/notifications"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                      <Bell size={14} className="text-gray-400" /> Notifications
+                    </Link>
+                    <Link href="/mon-espace/favoris"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                      <Heart size={14} className="text-gray-400" /> Favoris
                     </Link>
                     <Link href="/"
                       onClick={() => setUserMenuOpen(false)}
