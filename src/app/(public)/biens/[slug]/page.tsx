@@ -72,6 +72,7 @@ export default async function BienDetailPage({ params }: Props) {
 
   // Incrémenter les vues (fire-and-forget)
   void supabase.rpc('increment_vues', { p_bien_id: bien.id })
+  void fetch(`/api/biens/${bien.id}/enregistrer-vue`, { method: 'POST' }).catch(() => {})
 
   // Avis + similaires en parallèle
   const [{ data: avis }, { data: similaires }] = await Promise.all([

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Home, Heart, MessageCircle,
   CalendarCheck, User, Plus, LogOut, ChevronRight,
-  Shield, Settings, Building2, Bell, ArrowLeft,
+  Shield, Settings, Building2, Bell, ArrowLeft, FileText,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
@@ -49,6 +49,8 @@ const navProprietaire = [
   { href: '/mon-espace',                  label: 'Vue d\'ensemble',  icon: LayoutDashboard },
   { href: '/mon-espace/mes-biens',        label: 'Mes annonces',     icon: Home },
   { href: '/mon-espace/reservations',     label: 'Réservations',     icon: CalendarCheck },
+  { href: '/mon-espace/contrats',         label: 'Contrats',         icon: FileText },
+  { href: '/mon-espace/ventes',           label: 'Ventes',           icon: Building2 },
   { href: '/mon-espace/messagerie',       label: 'Conversations',    icon: MessageCircle },
   { href: '/mon-espace/notifications',    label: 'Notifications',    icon: Bell },
   { href: '/mon-espace/profil',           label: 'Mon profil',       icon: User },
@@ -57,6 +59,8 @@ const navProprietaire = [
 const navLocataire = [
   { href: '/mon-espace',                  label: 'Vue d\'ensemble',  icon: LayoutDashboard },
   { href: '/mon-espace/reservations',     label: 'Réservations',     icon: CalendarCheck },
+  { href: '/mon-espace/contrats',         label: 'Contrats',         icon: FileText },
+  { href: '/mon-espace/ventes',           label: 'Ventes',           icon: Building2 },
   { href: '/mon-espace/favoris',          label: 'Favoris',          icon: Heart },
   { href: '/mon-espace/messagerie',       label: 'Conversations',    icon: MessageCircle },
   { href: '/mon-espace/notifications',    label: 'Notifications',    icon: Bell },

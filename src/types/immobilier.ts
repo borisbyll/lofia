@@ -48,6 +48,9 @@ export interface Bien {
   photo_principale: string | null
   equipements: string[]
   is_featured: boolean
+  niveau_sponsoring: 'standard' | 'boost' | 'premium'
+  score_tri: number
+  sponsoring_actif_jusqu: string | null
   vues: number
   favoris_count: number
   moderateur_id: string | null
@@ -156,4 +159,119 @@ export interface Signalement {
   created_at: string
   bien?: Bien
   auteur?: Profile
+}
+
+export interface MiseEnRelation {
+  id: string
+  bien_id: string
+  locataire_id: string
+  proprietaire_id: string
+  code_visite: string
+  token_confirmation: string
+  visite_confirmee_locataire: boolean
+  visite_confirmee_proprietaire: boolean
+  statut: 'en_attente' | 'visite_confirmee' | 'contrat_genere' | 'signe' | 'expire' | 'annule'
+  message: string | null
+  expire_at: string
+  created_at: string
+  bien?: Bien
+  locataire?: Profile
+  proprietaire?: Profile
+}
+
+export interface ContratLocation {
+  id: string
+  mise_en_relation_id: string
+  bien_id: string
+  locataire_id: string
+  proprietaire_id: string
+  numero_contrat: string
+  loyer_mensuel: number
+  charges: number
+  depot_garantie: number
+  frais_dossier: number
+  frais_dossier_paye: boolean
+  date_debut: string
+  duree_mois: number
+  token_signature_locataire: string
+  token_signature_proprietaire: string
+  signature_locataire: boolean
+  signature_proprietaire: boolean
+  statut: 'en_attente_signatures' | 'en_attente_paiement' | 'signe' | 'resilie' | 'expire'
+  pdf_url: string | null
+  created_at: string
+  bien?: Bien
+  locataire?: Profile
+  proprietaire?: Profile
+}
+
+export interface DemandeVisiteVente {
+  id: string
+  bien_id: string
+  acheteur_id: string
+  vendeur_id: string
+  code_visite: string
+  token_confirmation: string
+  visite_confirmee_acheteur: boolean
+  visite_confirmee_vendeur: boolean
+  statut: 'en_attente' | 'visite_confirmee' | 'offre_faite' | 'annule'
+  message: string | null
+  created_at: string
+  bien?: Bien
+  acheteur?: Profile
+  vendeur?: Profile
+}
+
+export interface OffreAchat {
+  id: string
+  demande_visite_id: string
+  bien_id: string
+  acheteur_id: string
+  vendeur_id: string
+  prix_propose: number
+  prix_accepte: number | null
+  message_acheteur: string | null
+  message_vendeur: string | null
+  statut: 'en_attente' | 'acceptee' | 'refusee' | 'contre_offre'
+  created_at: string
+  bien?: Bien
+  acheteur?: Profile
+  vendeur?: Profile
+}
+
+export interface PromesseVente {
+  id: string
+  offre_id: string
+  bien_id: string
+  acheteur_id: string
+  vendeur_id: string
+  numero_promesse: string
+  prix_vente: number
+  commission_lofia: number
+  token_signature_acheteur: string
+  token_signature_vendeur: string
+  signature_acheteur: boolean
+  signature_vendeur: boolean
+  statut: 'en_attente_signatures' | 'signe' | 'vendu'
+  pdf_url: string | null
+  conditions: string | null
+  date_limite_signature: string | null
+  created_at: string
+  bien?: Bien
+  acheteur?: Profile
+  vendeur?: Profile
+}
+
+export interface Sponsorisation {
+  id: string
+  bien_id: string
+  proprietaire_id: string
+  formule: 'boost' | 'premium'
+  montant: number
+  date_debut: string
+  date_fin: string
+  fedapay_transaction_id: string | null
+  statut: 'en_attente' | 'actif' | 'expire' | 'annule'
+  created_at: string
+  bien?: Bien
 }
