@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { FORMULES } from '../formules/route'
+import { FORMULES } from '@/lib/sponsoring/formules'
 
 const APP_URL = process.env.APP_URL ?? 'https://lofia.vercel.app'
 const FEDAPAY_SECRET = process.env.FEDAPAY_SECRET_KEY ?? ''
