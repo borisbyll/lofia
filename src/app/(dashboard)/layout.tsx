@@ -82,19 +82,19 @@ const adminItems = [
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
 // Profil accessible via avatar dans le header mobile → libère 1 slot
 const bottomProprietaire = [
-  { href: '/mon-espace',           label: 'Accueil',    icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens', label: 'Annonces',   icon: Building2 },
-  { href: '/mon-espace/publier',   label: 'Publier',    icon: Plus, accent: true },
-  { href: '/mon-espace/contrats',  label: 'Contrats',   icon: FileText },
-  { href: '/mon-espace/ventes',    label: 'Ventes',     icon: Home },
+  { href: '/mon-espace',           label: 'Vue d\'ensemble', icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens', label: 'Annonces',        icon: Building2 },
+  { href: '/mon-espace/publier',   label: 'Publier',         icon: Plus, accent: true },
+  { href: '/mon-espace/contrats',  label: 'Contrats',        icon: FileText },
+  { href: '/mon-espace/ventes',    label: 'Ventes',          icon: Home },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',               label: 'Accueil',      icon: LayoutDashboard },
-  { href: '/mon-espace/reservations',  label: 'Réservations', icon: CalendarCheck },
-  { href: '/mon-espace/publier',       label: 'Publier',      icon: Plus, accent: true },
-  { href: '/mon-espace/contrats',      label: 'Contrats',     icon: FileText },
-  { href: '/mon-espace/ventes',        label: 'Ventes',       icon: Home },
+  { href: '/mon-espace',               label: 'Vue d\'ensemble', icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',  label: 'Réservations',    icon: CalendarCheck },
+  { href: '/mon-espace/publier',       label: 'Publier',         icon: Plus, accent: true },
+  { href: '/mon-espace/contrats',      label: 'Contrats',        icon: FileText },
+  { href: '/mon-espace/ventes',        label: 'Ventes',          icon: Home },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
