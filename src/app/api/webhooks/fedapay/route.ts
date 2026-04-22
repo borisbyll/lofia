@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { notifReservationConfirmee, notifContratSigne, notifSponsoringActive } from '@/lib/notifications/whatsapp'
 import { formatPrix, formatDate } from '@/lib/utils'
 
 const APP_URL = process.env.APP_URL ?? 'https://lofia.vercel.app'
 
-// ── Vérification signature HMAC FedaPay ──────────────────────────────
-function verifierSignature(body: string, signature: string | null): boolean {
+// ── Vérification en-tête FedaPay (valeur brute dans x-fedapay-signature) ──
+function verifierSignature(signature: string | null): boolean {
   const secret = process.env.FEDAPAY_WEBHOOK_SECRET
   if (!secret || !signature) return false
-  const expected = createHmac('sha256', secret).update(body).digest('hex')
-  return expected === signature
+  return signature === secret
 }
 
 // ── Handler réservation courte durée ─────────────────────────────────
@@ -157,7 +155,7 @@ export async function POST(request: Request) {
   const body      = await request.text()
   const signature = request.headers.get('x-fedapay-signature')
 
-  if (!verifierSignature(body, signature)) {
+  if (!verifierSignature(signature)) {
     return new NextResponse('Signature invalide', { status: 401 })
   }
 
