@@ -36,7 +36,7 @@ Stack : **Next.js 14.2.29** + React 18.3.1 + TypeScript 5.6 + **Tailwind CSS v3.
 
 ## 5. Architecture Next.js 14 App Router
 Route groups dans `src/app/` :
-- `(public)` — pages publiques : `/`, `/vente`, `/location`, `/biens/[slug]`, `/proprietaire/[id]`, `/autour`, `/conditions`, `/faq`
+- `(public)` — pages publiques : `/`, `/vente`, `/location`, `/biens/[slug]`, `/proprietaire/[id]`, `/autour`, `/conditions`, `/faq`, `/confirmation-signature`
 - `(auth)` — `/connexion`, `/inscription`
 - `(dashboard)` — `/mon-espace/*`, `/moderateur/*`, `/admin/*` (layout unifié avec sidebar + bottom nav)
 
@@ -53,11 +53,12 @@ Pattern : `page.tsx` = wrapper Suspense, `XClient.tsx` = composant réel.
 **Supabase client** :
 - Côté client : `import { supabase } from '@/lib/supabase/client'`
 - Côté serveur (Server Components) : `import { createClient } from '@/lib/supabase/server'`
+- Admin (service_role, server-side uniquement) : `import { supabaseAdmin } from '@/lib/supabase/admin'`
 
 ## 6. Base de données Supabase
 **Projet ID** : `frxcxnzgdlumbjkgdozs`
 
-**Migrations exécutées (dans l'ordre, 11 fichiers réels) :**
+**Migrations exécutées (23 fichiers, dans l'ordre) :**
 - `001_init.sql` — profiles, biens, documents, avis, reservations, conversations, conversation_messages, favoris, messages_contact, notifications, signalements + RLS + index
 - `002_messagerie_reservations_notifs.sql` — mises à jour messagerie, réservations, notifications
 - `003_sequestre.sql` — colonnes séquestre, trigger `trg_liberation_fonds`, fonctions `confirmer_arrivee()` et `liberer_fonds_sequestre()`
@@ -69,15 +70,32 @@ Pattern : `page.tsx` = wrapper Suspense, `XClient.tsx` = composant réel.
 - `014_fix_avis_schema.sql` — corrections finales schéma avis
 - `015_security_hardening.sql` — durcissement sécurité RLS étendu
 - `016_storage_cni_restrict.sql` — restriction bucket storage CNI
+- `017_add_meuble_video_columns.sql` — colonnes `meuble` (boolean) et `video_url` (text) sur biens
+- `018_add_nb_salons.sql` — colonne `nb_salons` sur biens (remplace nb_pieces ambigu)
+- `019_disponibilites.sql` — table `disponibilites` (blocages courte durée)
+- `020_longue_duree.sql` — tables `mises_en_relation` + `contrats_location`
+- `021_vente.sql` — tables `demandes_visite_vente` + `offres_achat` + `promesses_vente`
+- `022_sponsoring.sql` — table `sponsorisations` + `stats_biens`, colonnes `niveau_sponsoring`/`sponsoring_actif_jusqu`/`score_tri` sur biens
+- `023_date_visite.sql` — colonne `date_visite_proposee` sur `mises_en_relation`
+
+**⚠️ Migrations 017→023 doivent être exécutées manuellement dans Supabase Dashboard → SQL Editor**
 
 **Tables principales et colonnes clés :**
 - `profiles` — id, role, nom, phone, bio, is_diaspora, avatar_url, cni_recto_url, cni_verso_url, identite_verifiee
-- `biens` — statut: brouillon/en_attente/publie/rejete/archive | categorie: vente/location | type_bien, type_location, prix, prix_type, prix_negociable, superficie, nb_pieces, nb_chambres, nb_salles_bain, nb_etages, annee_construction, ville, commune, quartier, adresse, latitude, longitude, photos[], photo_principale, equipements[], is_featured, vues, favoris_count, owner_id, moderateur_id, note_moderation, modere_at, publie_at, slug
+- `biens` — statut: brouillon/en_attente/publie/rejete/archive | categorie: vente/location | type_bien, type_location, prix, prix_type, prix_negociable, superficie, nb_pieces, **nb_salons**, nb_chambres, nb_salles_bain, nb_etages, annee_construction, ville, commune, quartier, adresse, latitude, longitude, photos[], photo_principale, equipements[], is_featured, **meuble**, **video_url**, **niveau_sponsoring**, **sponsoring_actif_jusqu**, **score_tri**, vues, favoris_count, owner_id, moderateur_id, note_moderation, modere_at, publie_at, slug
 - `reservations` — locataire_id, proprietaire_id, date_debut, date_fin, nb_nuits, prix_total, commission, montant_proprio, **commission_voyageur** (8%), **commission_hote** (3%), prix_nuit, statut, paiement_effectue, fedapay_status, fedapay_transaction_id, check_in_at, liberation_fonds_at, paiement_at, proprio_paye, proprio_paye_at
 - `conversations` — id, bien_id, **proprietaire_id**, **locataire_id**, created_at (PAS user1_id/user2_id, PAS updated_at)
 - `conversation_messages` — id, conversation_id, sender_id, contenu, lu, created_at (PAS messages_prive)
+- `disponibilites` — bien_id, date_debut, date_fin, type (bloque/reserve)
+- `mises_en_relation` — bien_id, locataire_id, proprietaire_id, code_visite, token_confirmation, statut (en_attente/visite_confirmee/contrat_genere/signe/expire/annule), visite_confirmee_locataire, visite_confirmee_proprietaire, date_visite_proposee, message
+- `contrats_location` — mise_en_relation_id, bien_id, locataire_id, proprietaire_id, numero_contrat, loyer_mensuel, charges, depot_garantie, frais_dossier, date_debut, duree_mois, statut, pdf_url, frais_payes
+- `demandes_visite_vente` — bien_id, acheteur_id, vendeur_id, code_visite, statut, message
+- `offres_achat` — demande_visite_id, bien_id, acheteur_id, vendeur_id, montant, statut (en_attente/acceptee/refusee/contre_offre), contre_montant, message
+- `promesses_vente` — offre_id, bien_id, acheteur_id, vendeur_id, prix_vente, conditions, statut (en_attente/signe/vendu), pdf_url, token_acheteur, token_vendeur, signe_acheteur_at, signe_vendeur_at, ip_acheteur, ip_vendeur
+- `sponsorisations` — bien_id, proprietaire_id, formule (boost/premium), prix, duree_jours, score_tri, fedapay_transaction_id, statut, debut_at, fin_at
+- `stats_biens` — bien_id, date, vues, clics_contact, clics_reserver
 - `favoris`, `messages_contact`, `moderation_log`, `signalements`
-- `notifications` — user_id, type, titre, corps, lien, lu, created_at
+- `notifications` — user_id, type, titre, corps, lien, lu, created_at — **`lien` doit toujours être un chemin interne `/...` — jamais une URL externe**
 - `documents` — bien_id, type (titre_foncier/attestation/autre), url, nom, verified
 - `avis` — bien_id, reservation_id, auteur_id, proprietaire_id, sujet_id, note (1-5), commentaire, type (locataire_note_proprio | proprio_note_locataire)
 
@@ -85,15 +103,17 @@ Pattern : `page.tsx` = wrapper Suspense, `XClient.tsx` = composant réel.
 - Trigger : `statut=en_attente` pour VENTE, `statut=publie` pour LOCATION à l'insertion
 - Trigger `trg_liberation_fonds` : `liberation_fonds_at = check_in_at + 24h`
 - RLS activé sur toutes les tables — toutes les politiques utilisent `(select auth.uid())` (pas `auth.uid()` direct)
+- Biens ordonnés par `score_tri DESC, is_featured DESC, publie_at DESC`
 
 ## 7. Supabase Storage
 - Bucket : `biens-photos` (public)
 - Remote patterns autorisés dans next.config.mjs : `frxcxnzgdlumbjkgdozs.supabase.co` et `*.supabase.co`
 
-## 8. Edge Functions
+## 8. Edge Functions & Crons
 - `supabase/functions/liberer-fonds/index.ts` — cron `*/5 * * * *` appelant `liberer_fonds_sequestre()` + `terminer_sejours_expires()`
 - `supabase/functions/create-fedapay-transaction/index.ts` — création transaction FedaPay (vérifie auth + ownership)
 - `supabase/functions/confirm-fedapay-payment/index.ts` — confirmation paiement FedaPay, insère 2 notifications (locataire + proprio), auto-détecte sandbox vs live
+- Cron sponsoring : `/api/cron/sponsoring` — expire les sponsorisations dépassées, remet `score_tri=0`, s'appelle avec header `Authorization: Bearer CRON_SECRET`
 
 ## 9. Fichiers de configuration clés
 | Fichier | Rôle |
@@ -101,29 +121,30 @@ Pattern : `page.tsx` = wrapper Suspense, `XClient.tsx` = composant réel.
 | `src/lib/brand.ts` | Nom LOFIA., logo, tagline, domaine lofia.com, contacts |
 | `src/lib/constants.ts` | VILLES_TOGO, TYPES_BIEN, EQUIPEMENTS, PRIX_RANGES_*, COMMISSION, RAYON_OPTIONS, TYPES_PAR_CATEGORIE, MOTIFS_SIGNALEMENT |
 | `src/lib/utils.ts` | cn(), formatPrix(), formatDate(), formatDateCourt(), haversine(), formatDistance(), masquerTelephone(), slugify(), nbNuits(), formatRelative() |
+| `src/lib/sponsoring/formules.ts` | Constante FORMULES (boost/premium) — **importer depuis ici, jamais depuis la route API** |
+| `src/lib/utils/codes.ts` | genererCodeVisite() — codes alphanumériques 6 chars |
 | `src/app/globals.css` | Design system Tailwind v3 (@layer base/components : .card-bien, .btn-*, .badge-*, .wrap, .section, .prix, .input-field, .label-field, .stat-card, .dashboard-card) |
 | `tailwind.config.ts` | Palette LOFIA. (primary=bordeaux, accent=or, cream, or-pale, brun-nuit, brun-doux, vert-foret) |
-| `.env` | NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY + NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY + FEDAPAY_SECRET_KEY + NEXT_PUBLIC_GOOGLE_MAPS_KEY |
+| `.env` | NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY + NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY + FEDAPAY_SECRET_KEY + SUPABASE_SERVICE_ROLE_KEY + FEDAPAY_WEBHOOK_SECRET + APP_URL + CRON_SECRET + NEXT_PUBLIC_GOOGLE_MAPS_KEY |
 | `next.config.mjs` | Config Next.js — images remotePatterns + security headers (X-Frame-Options, HSTS, etc.) |
-| `supabase/migrations/` | 11 fichiers SQL |
+| `supabase/migrations/` | 23 fichiers SQL |
 | `public/manifest.json` | PWA manifest ✅ à jour — "LOFIA. — Immobilier Togo", theme_color #8B1A2E |
 | `public/sw.js` | Service Worker — Cache First pour images Supabase + assets Next.js (CACHE_NAME: 'lofia-immo-v1') |
 
-## 10. État d'avancement — ✅ TOUT COMPLÉTÉ
+## 10. État d'avancement
 
-### Infrastructure
+### Infrastructure ✅
 - Next.js 14.2.29 App Router, TypeScript 5.6, Tailwind CSS v3.4.17
 - Design system complet (`globals.css` avec classes utilitaires LOFIA.)
-- Supabase client/server (@supabase/ssr 0.5.2 + @supabase/supabase-js 2.101.1)
+- Supabase client/server/admin (@supabase/ssr 0.5.2 + @supabase/supabase-js 2.101.1)
 - Middleware auth (cookie sync + routes protégées, `getSession()` pas `getUser()`)
 - Zustand stores : `authStore` + `dashboardModeStore` (persisté localStorage `lofia-dashboard-mode`)
-- Types TypeScript complets (`src/types/immobilier.ts`)
+- Types TypeScript complets (`src/types/immobilier.ts`) — MiseEnRelation, ContratLocation, DemandeVisiteVente, OffreAchat, PromesseVente, Sponsorisation inclus
 - PWA complète : manifest.json + sw.js + SwRegister + icônes PNG réelles (96/192/512px + apple-touch-icon)
-- `TYPES_PAR_CATEGORIE` dans constants.ts (Record<string, string[]>)
 - Security headers (HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy)
 - SEO complet + sitemap.xml + robots.txt dynamiques
-- Carte OpenStreetMap via iframe OSM sur fiches biens (react-leaflet remplacé)
 - Système de notifications complet (Realtime, tous événements couverts)
+- Webhook FedaPay centralisé : `src/app/api/webhooks/fedapay/route.ts`
 
 ### Dépendances notables
 - Radix UI (accordion, alert-dialog, avatar, checkbox, dialog, dropdown, label, popover, progress, scroll-area, select, separator, slot, switch, tabs, toast, tooltip)
@@ -132,30 +153,39 @@ Pattern : `page.tsx` = wrapper Suspense, `XClient.tsx` = composant réel.
 - Sonner 2.0.3 + React Hot Toast 2.5.2
 - date-fns 4.1.0, Lucide React 0.469.0
 - next-themes 0.4.6, vaul 1.1.2, cmdk 1.1.1, react-day-picker 8.10.1, sharp 0.33.5
+- @react-pdf/renderer — génération PDF côté serveur (contrats location + promesses vente)
 
-### Pages publiques (`src/app/(public)/`)
+### Pages publiques (`src/app/(public)/`) ✅
 - `/` — HeroSection, StatsSection, CategoriesSection, BiensFeatured, VillesSection, TrustSection, CtaSection
 - `/vente` — VenteClient + Suspense wrapper, filtres géo/type/budget
 - `/location` — LocationClient + Suspense wrapper, tabs courte/longue durée
 - `/biens` — redirect vers /vente
-- `/biens/[slug]` — Server Component + BienDetailClient + ReservationPanel + SignalementModal (carrousel Embla, carte OSM, avis)
+- `/biens/[slug]` — Server Component + BienDetailClient + panel conditionnel selon type :
+  - `courte_duree` → `ReservationPanel` (FedaPay)
+  - `longue_duree` → `LongueDureePanel` (demande de visite + code visite)
+  - `vente` → `VentePanel` (demande de visite + code visite)
+  - + SignalementModal, carrousel Embla, carte OSM, avis
 - `/proprietaire/[id]` — Server Component + ProprietaireClient
 - `/autour` — géolocalisation navigator + rayon configurable (500m→10km), fallback haversine, grid BienCard
+- `/confirmation-signature` — page post-signature promesse vente (success/error)
 - `/conditions` — page statique CGU
 - `/faq` — page statique FAQ avec accordéons
 
-### Auth (`src/app/(auth)/`)
+### Auth (`src/app/(auth)/`) ✅
 - `/connexion` — Suspense wrapper + ConnexionClient
 - `/inscription` — Suspense wrapper + InscriptionClient (2 étapes, flag diaspora, détection email dupliqué via `identities.length === 0`)
 
-### Dashboard (`src/app/(dashboard)/`)
+### Dashboard (`src/app/(dashboard)/`) ✅
 Layout unifié : sidebar desktop + bottom nav mobile (5 items, CTA Publier central)
-Chaque route a un fichier `loading.tsx` dédié.
+**Bottom nav Propriétaire :** Vue d'ensemble | Annonces | Publier | Visites | Ventes
+**Bottom nav Locataire :** Vue d'ensemble | Réservations | Publier | Visites | Ventes
+Autres pages accessibles via avatar dropdown : Messages, Notifications, Favoris, Profil
 
 - `/mon-espace` — stats + finance mode-aware (proprietaire/locataire)
 - `/mon-espace/publier` — 4 étapes: type→détails→localisation→photos, GPS, upload Storage
 - `/mon-espace/mes-biens` — tabs statuts, menu contextuel 3 points
 - `/mon-espace/mes-biens/[id]/modifier` — edit avec photos existantes
+- `/mon-espace/mes-biens/[id]/sponsoriser` — choix formule sponsoring + paiement FedaPay
 - `/mon-espace/reservations` — vue proprio/locataire, séquestre, confirmer arrivée
 - `/mon-espace/messages` — Demandes reçues (messages_contact)
 - `/mon-espace/messagerie` — Conversations temps réel Supabase Realtime
@@ -163,6 +193,16 @@ Chaque route a un fichier `loading.tsx` dédié.
 - `/mon-espace/profil` — edit profil + avatar + CNI recto/verso
 - `/mon-espace/paiement/[id]` — FedaPay widget, GPS révélé après paiement, reçu
 - `/mon-espace/notifications` — liste notifications avec marquage lu
+- `/mon-espace/notifications/[id]` — détail notification, marque lu, bouton "Voir le détail" **uniquement si lien interne**
+- `/mon-espace/mises-en-relation` — liste des demandes de visite longue durée (proprio + locataire)
+- `/mon-espace/mises-en-relation/[id]` — détail : bien, interlocuteur, confirmation visite avec date, lien contrat
+- `/mon-espace/mises-en-relation/[id]/generer-contrat` — formulaire contrat (loyer, charges, dépôt, frais, durée)
+- `/mon-espace/contrats` — liste contrats location
+- `/mon-espace/contrats/[id]` — détail contrat, lien PDF, statut signatures, frais dossier
+- `/mon-espace/contrats/[id]/payer-frais` — paiement frais de dossier via FedaPay
+- `/mon-espace/ventes` — tabs : Visites / Offres / Promesses (acheteur + vendeur)
+- `/mon-espace/ventes/[id]` — détail visite vente : confirmer, faire offre, répondre offre, générer promesse
+- `/mon-espace/ventes/promesse/[id]` — détail promesse : signer, télécharger PDF, marquer vendu
 - `/moderateur` — dashboard file d'attente (stats: en_attente/approuvés/rejetés/signalements)
 - `/moderateur/biens/[id]` — approve/reject + notification proprio
 - `/moderateur/signalements` — liste signalements modérateur
@@ -170,6 +210,25 @@ Chaque route a un fichier `loading.tsx` dédié.
 - `/admin/utilisateurs` — changement rôle inline, vérification identité
 - `/admin/biens` — tous les biens, filtres, archiver/supprimer
 - `/admin/signalements` — tous signalements, suspension
+
+### API Routes (`src/app/api/`)
+- `/api/reservations/*` — courte durée (creer, annuler, confirmer-arrivee)
+- `/api/longue-duree/demander-contact` — crée mise_en_relation + code visite
+- `/api/longue-duree/confirmer-direct` — confirmation visite via session auth (pas magic link)
+- `/api/longue-duree/generer-contrat` — génère PDF contrat + insert contrats_location
+- `/api/longue-duree/payer-frais-dossier` — crée transaction FedaPay pour frais dossier
+- `/api/vente/demander-visite` — crée demande_visite_vente + code visite
+- `/api/vente/faire-offre` — soumet offre_achat
+- `/api/vente/repondre-offre` — accepte/refuse/contre-offre
+- `/api/vente/generer-promesse` — génère PDF promesse + tokens signature
+- `/api/vente/signer-promesse` — signature via token (GET, enregistre IP + timestamp)
+- `/api/vente/marquer-vendu` — finalise la vente
+- `/api/sponsoring/formules` — liste les formules (GET)
+- `/api/sponsoring/souscrire` — souscrit une formule + paiement FedaPay
+- `/api/sponsoring/[id]/stats` — stats du bien sponsorisé
+- `/api/sponsoring/[id]/annuler` — annule la sponsorisation
+- `/api/cron/sponsoring` — expire les sponsorisations (appel cron)
+- `/api/webhooks/fedapay` — webhook centralisé FedaPay (réservations + sponsoring + frais dossier)
 
 ### Composants (`src/components/`)
 **Layout :**
@@ -191,7 +250,7 @@ Chaque route a un fichier `loading.tsx` dédié.
 - `biens/BienCard.tsx` — prop `onUnfavorite?: (id: string) => void`
 - `biens/BienCardSkeleton.tsx`
 - `biens/GeoFilterBar.tsx` — contrôle géoloc + sélecteur rayon
-- `biens/MapApproximatif.tsx` — carte OSM iframe (non utilisée directement, intégrée dans BienDetailClient)
+- `biens/MapApproximatif.tsx` — carte OSM iframe
 
 **UI :**
 - `ui/AvisModal.tsx` — notation 1-5 étoiles, commentaire 500 chars, insert table avis
@@ -221,6 +280,12 @@ Chaque route a un fichier `loading.tsx` dédié.
 - **Apostrophes JSX** : utiliser `&apos;` ou double quotes `"l'adresse"` (pas de guillemets simples dans JSX string literals)
 - **`next.config.mjs`** : extension obligatoire (Next.js 14.2.29 ne supporte pas `.ts`)
 - **Dashboard mode** : persisté dans localStorage via Zustand persist (`lofia-dashboard-mode`)
+- **FedaPay webhook** : vérification par comparaison directe `signature === secret` — l'en-tête HTTP `x-fedapay-signature` contient la valeur brute du secret (PAS HMAC)
+- **Notifications `lien`** : toujours un chemin interne `/...` — jamais une URL externe (les URLs Supabase auth déconnectent l'utilisateur)
+- **Confirmation visite longue durée** : via `/api/longue-duree/confirmer-direct` (session auth), pas via magic link WhatsApp (non configuré)
+- **PDF** : généré avec `@react-pdf/renderer` côté serveur via `renderToBuffer`, cast `as any` pour la compatibilité TypeScript
+- **Tri des biens** : `score_tri DESC, is_featured DESC, publie_at DESC` — sponsoring augmente `score_tri`
+- **Formules sponsoring** : définies dans `src/lib/sponsoring/formules.ts` — ne jamais les exporter depuis une route API (build error Next.js)
 
 ## 12. Sécurité — état final
 - 0 alertes critiques corrigeables
@@ -233,20 +298,26 @@ Chaque route a un fichier `loading.tsx` dédié.
 
 ## 13. Ce qui reste à faire
 - [x] ~~Créer composant logo~~ ✅
-- [x] ~~Mettre à jour manifest.json, favicon, icônes PWA~~ ✅ (PNG 96/192/512 + apple-touch-icon réels)
-- [x] ~~Mettre à jour brand.ts~~ ✅ (lofia.com)
-- [x] ~~Intégrer LogoLofia dans Navbar, Footer, Dashboard~~ ✅
-- [x] ~~Mettre à jour package.json~~ ✅ (lofia-immo)
-- [x] ~~SEO~~ ✅ (metadata, sitemap, robots, partage WhatsApp)
-- [x] ~~Système notifications~~ ✅ (tous événements, Realtime)
-- [x] ~~PWA icônes réelles~~ ✅
-- [ ] Remplacer résidus "Dôme" dans commentaires : `globals.css` (lignes 7, 83, 111, 194) + `tailwind.config.ts` (lignes 18, 45) — **6 occurrences**
+- [x] ~~Mettre à jour manifest.json, favicon, icônes PWA~~ ✅
+- [x] ~~SEO~~ ✅ (metadata, sitemap, robots)
+- [x] ~~Système notifications~~ ✅ (Realtime, page détail, fix lien externe)
+- [x] ~~Module 1 — Courte durée~~ ✅ (réservations, FedaPay, séquestre, calendrier)
+- [x] ~~Module 2 — Location longue durée~~ ✅ (mises-en-relation, confirmation, contrat PDF, frais dossier)
+- [x] ~~Module 3 — Vente~~ ✅ (visites, offres, promesse PDF, signature, marquer vendu)
+- [x] ~~Module 4 — Sponsoring~~ ✅ (formules, FedaPay, stats, cron, tri)
+- [x] ~~Bottom nav mobile avec Visites + Ventes~~ ✅
+- [x] ~~Page détail notifications~~ ✅
+- [ ] **Exécuter migrations 017→023 dans Supabase Dashboard** (SQL Editor)
+- [ ] Remplacer résidus "Dôme" dans commentaires : `globals.css` (lignes 7, 83, 111, 194) + `tailwind.config.ts` (lignes 18, 45) — 6 occurrences
 - [ ] Intégration FedaPay réelle (remplacer sandbox — clés prod disponibles)
+- [ ] Configurer CRON_SECRET sur Vercel + activer cron Vercel pour `/api/cron/sponsoring`
+- [ ] WhatsApp Business API (non configuré — non bloquant, confirmation fonctionne sans)
 - [ ] Système d'avis/reviews UI sur ProprietairePage (table `avis` existe, AvisModal existe)
 - [ ] Page `/recherche` globale cross-catégories
 - [ ] Déploiement Vercel + configuration domaine `lofia.com`
 - [ ] Configurer Site URL dans Supabase Dashboard → Auth → URL Configuration (`lofia.com`)
 - [ ] Clé Google Maps `NEXT_PUBLIC_GOOGLE_MAPS_KEY` dans `.env` (présente mais vide)
+- [ ] Ajouter variables d'environnement Vercel : SUPABASE_SERVICE_ROLE_KEY, FEDAPAY_WEBHOOK_SECRET, APP_URL, CRON_SECRET
 
 ## 14. Quirks techniques — ne jamais reproduire ces erreurs
 - `conversations` n'a PAS de colonne `updated_at` — ne jamais l'utiliser dans les queries
@@ -261,6 +332,11 @@ Chaque route a un fichier `loading.tsx` dédié.
 - `src/lib/config.ts` n'existe pas — ne jamais l'importer
 - Utiliser `getSession()` et non `getUser()` dans middleware/authStore — `getUser()` cause un spinner permanent
 - Ne PAS utiliser react-leaflet — remplacé par iframe OSM (TypeError au runtime avec Next.js 14)
+- **Ne jamais exporter une constante nommée depuis un fichier `route.ts`** — Next.js n'accepte que les verbes HTTP (GET, POST…) + `config`. Toute constante partagée doit être dans un fichier `lib/`
+- **Ne jamais avoir deux segments dynamiques différents au même niveau de répertoire** (`[id]` et `[bien_id]` ensemble) — conflit de slug Next.js au build
+- **Ne jamais stocker une URL Supabase auth comme `lien` dans les notifications** — déconnecte l'utilisateur. Toujours un chemin interne `/mon-espace/...`
+- **Ne JAMAIS renommer "Vue d'ensemble" en "Accueil"** dans la bottom nav ou la sidebar — c'est le terme métier validé
+- **`supabaseAdmin`** ne s'utilise que côté serveur (Server Components, route handlers) — jamais côté client
 
 ---
 
@@ -421,7 +497,8 @@ import { LogoLofia } from '@/components/lofia/LogoLofia'
 ```tsx
 // fixed bottom-0 left-0 right-0 — 5 éléments max
 // bg-white border-t border-gray-100
-// Élément actif : text-primary-500 + point indicateur bordeaux sous l'icône
+// Élément actif : text-primary-500 + fond bg-primary-50 sur l'icône
+// JAMAIS renommer "Vue d'ensemble" en "Accueil"
 ```
 
 ### 15.6 Composants — règles visuelles
@@ -511,5 +588,5 @@ Charts admin      — Recharts
 
 ---
 
-*LOFIA. — CLAUDE.md v5.0 — Audit complet et synchronisation état réel — Avril 2026*
+*LOFIA. — CLAUDE.md v6.0 — Modules 1-4 complets, 23 migrations, Avril 2026*
 *Ce fichier remplace tous les fichiers CLAUDE.md précédents.*
