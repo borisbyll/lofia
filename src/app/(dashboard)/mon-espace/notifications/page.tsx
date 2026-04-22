@@ -124,7 +124,7 @@ export default function NotificationsPage() {
           {notifs.map(n => (
             <Link
               key={n.id}
-              href={n.lien || '/mon-espace'}
+              href={`/mon-espace/notifications/${n.id}`}
               onClick={() => { if (!n.lu) markOne(n.id) }}
               className={cn(
                 'flex items-start gap-3 px-4 py-4 hover:bg-gray-50 transition-colors',

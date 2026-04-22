@@ -74,7 +74,7 @@ export default function NotifBell() {
             {notifs.length === 0 ? (
               <div className="py-10 text-center"><Bell size={28} className="text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucune notification</p></div>
             ) : notifs.map(n => (
-              <Link key={n.id} href={n.lien || '/mon-espace'} onClick={() => setOpen(false)}
+              <Link key={n.id} href={`/mon-espace/notifications/${n.id}`} onClick={() => setOpen(false)}
                 className={cn('block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors', !n.lu && 'bg-primary-50/50')}>
                 <div className="flex items-start gap-2.5">
                   {!n.lu && <div className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0" />}
