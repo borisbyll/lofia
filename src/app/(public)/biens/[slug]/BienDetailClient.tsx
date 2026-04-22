@@ -19,6 +19,8 @@ import { supabase } from '@/lib/supabase/client'
 import type { Bien, Avis } from '@/types/immobilier'
 import BienCard from '@/components/biens/BienCard'
 import ReservationPanel from './ReservationPanel'
+import LongueDureePanel from './LongueDureePanel'
+import VentePanel from './VentePanel'
 import SignalementModal from './SignalementModal'
 
 const MapApproximatif = dynamic(() => import('@/components/biens/MapApproximatif'), {
@@ -276,10 +278,20 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 <PropriétaireCard bien={bien} onContact={handleContact} />
               </div>
 
-              {/* Panel réservation (mobile uniquement) */}
+              {/* Panneau d'action mobile selon type */}
               {bien.categorie === 'location' && bien.type_location === 'courte_duree' && (
                 <div id="reserver" className="lg:hidden scroll-mt-4">
                   <ReservationPanel bien={bien} />
+                </div>
+              )}
+              {bien.categorie === 'location' && bien.type_location === 'longue_duree' && (
+                <div id="demander-visite" className="lg:hidden scroll-mt-4">
+                  <LongueDureePanel bien={bien} />
+                </div>
+              )}
+              {bien.categorie === 'vente' && (
+                <div id="demander-visite" className="lg:hidden scroll-mt-4">
+                  <VentePanel bien={bien} />
                 </div>
               )}
 
@@ -348,6 +360,12 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 {bien.categorie === 'location' && bien.type_location === 'courte_duree' && (
                   <ReservationPanel bien={bien} />
                 )}
+                {bien.categorie === 'location' && bien.type_location === 'longue_duree' && (
+                  <LongueDureePanel bien={bien} />
+                )}
+                {bien.categorie === 'vente' && (
+                  <VentePanel bien={bien} />
+                )}
               </div>
             </div>
           </div>
@@ -362,6 +380,14 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
         {bien.categorie === 'location' && bien.type_location === 'courte_duree' ? (
           <Link href="#reserver" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
             <Calendar size={15} /> Réserver
+          </Link>
+        ) : bien.categorie === 'location' && bien.type_location === 'longue_duree' ? (
+          <Link href="#demander-visite" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
+            <Key size={15} /> Demander une visite
+          </Link>
+        ) : bien.categorie === 'vente' ? (
+          <Link href="#demander-visite" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
+            <Building2 size={15} /> Demander une visite
           </Link>
         ) : (
           <button onClick={handleContact} className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
