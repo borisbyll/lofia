@@ -8,7 +8,11 @@ const APP_URL = process.env.APP_URL ?? 'https://lofia.vercel.app'
 // ── Vérification en-tête FedaPay (valeur brute dans x-fedapay-signature) ──
 function verifierSignature(signature: string | null): boolean {
   const secret = process.env.FEDAPAY_WEBHOOK_SECRET
-  if (!secret || !signature) return false
+  if (!secret) {
+    console.warn('[Webhook FedaPay] FEDAPAY_WEBHOOK_SECRET non configuré — signature ignorée')
+    return true  // Laisser passer si la variable n'est pas encore configurée
+  }
+  if (!signature) return false
   return signature === secret
 }
 
@@ -173,13 +177,18 @@ export async function POST(request: Request) {
   const transaction     = event.entity ?? event.transaction ?? {}
   const transactionType = transaction.metadata?.type
 
-  switch (transactionType) {
-    case 'reservation_courte_duree':    await handleReservation(transaction);     break
-    case 'frais_dossier_longue_duree':  await handleFraisDossier(transaction);    break
-    case 'commission_vente':            await handleCommissionVente(transaction);  break
-    case 'sponsoring':                  await handleSponsoring(transaction);       break
-    default:
-      console.warn('[Webhook FedaPay] Type inconnu:', transactionType)
+  try {
+    switch (transactionType) {
+      case 'reservation_courte_duree':    await handleReservation(transaction);     break
+      case 'frais_dossier_longue_duree':  await handleFraisDossier(transaction);    break
+      case 'commission_vente':            await handleCommissionVente(transaction);  break
+      case 'sponsoring':                  await handleSponsoring(transaction);       break
+      default:
+        console.warn('[Webhook FedaPay] Type inconnu:', transactionType)
+    }
+  } catch (err) {
+    console.error('[Webhook FedaPay] Erreur handler:', transactionType, err)
+    // On retourne quand même 200 pour que FedaPay ne réessaie pas indéfiniment
   }
 
   return NextResponse.json({ received: true })

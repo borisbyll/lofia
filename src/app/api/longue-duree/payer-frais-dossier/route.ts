@@ -43,10 +43,16 @@ export async function POST(request: Request) {
     if (!fedaRes.ok) return NextResponse.json({ error: 'Erreur création paiement' }, { status: 502 })
 
     const fedaData = await fedaRes.json()
-    const token    = fedaData.v1?.token ?? fedaData.token
-    const paiementUrl = `${FEDAPAY_BASE.replace('api', 'checkout')}/payment-page/${token}`
+    const txn      = fedaData.v1?.transaction ?? fedaData.v1 ?? fedaData
+    const token    = txn?.token
+    if (!token) {
+      console.error('[payer-frais-dossier] Token manquant dans réponse FedaPay:', JSON.stringify(fedaData))
+      return NextResponse.json({ error: 'Impossible de créer le paiement FedaPay' }, { status: 502 })
+    }
+    const checkoutBase = FEDAPAY_BASE.replace('sandbox-api', 'sandbox-checkout').replace('//api.', '//checkout.')
+    const paiementUrl  = `${checkoutBase}/payment-page/${token}`
 
-    await supabaseAdmin.from('contrats_location').update({ fedapay_frais_dossier_id: String(fedaData.v1?.id ?? fedaData.id) }).eq('id', contrat_id)
+    await supabaseAdmin.from('contrats_location').update({ fedapay_frais_dossier_id: String(txn?.id ?? '') }).eq('id', contrat_id)
 
     return NextResponse.json({ success: true, paiement_url: paiementUrl })
   } catch (err) {
