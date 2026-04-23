@@ -24,7 +24,7 @@ export default function GenererContratPage() {
       body: JSON.stringify({
         mise_en_relation_id: id,
         loyer_mensuel:  Number(form.loyer_mensuel),
-        charges:        Number(form.charges),
+        charges_mensuelles: Number(form.charges),
         depot_garantie: Number(form.depot_garantie || form.loyer_mensuel),
         frais_dossier:  Number(form.frais_dossier),
         date_debut:     form.date_debut,

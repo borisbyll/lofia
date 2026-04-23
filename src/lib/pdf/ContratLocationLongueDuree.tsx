@@ -69,10 +69,10 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
 
         <View style={S.header}>
           <View><Text style={S.logo}>LOFIA.</Text><Text style={S.logoSub}>Immobilier Togo · lofia.vercel.app</Text></View>
-          <Text style={{ fontSize: 9, color: '#7a5c3a', textAlign: 'right' }}>CONTRAT DE BAIL{'\n'}D&apos;HABITATION</Text>
+          <Text style={{ fontSize: 9, color: '#7a5c3a', textAlign: 'right' }}>CONTRAT DE BAIL{'\n'}D'HABITATION</Text>
         </View>
 
-        <Text style={S.docTitle}>CONTRAT DE BAIL D&apos;HABITATION</Text>
+        <Text style={S.docTitle}>CONTRAT DE BAIL D'HABITATION</Text>
         <View style={S.numBox}>
           <Text style={S.numText}>N° {data.numeroContrat}   ·   Établi le {data.dateContrat}</Text>
         </View>
@@ -103,7 +103,7 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
           <Champ label="Durée"      value={`${data.dureeeMois} mois`} />
           <Champ label="Date début" value={data.dateDebut} />
           <Champ label="Date fin"   value={data.dateFin} />
-          <Text style={S.note}>Reconduction tacite si absence de résiliation 1 mois avant l&apos;échéance.</Text>
+          <Text style={S.note}>Reconduction tacite si absence de résiliation 1 mois avant l'échéance.</Text>
         </View>
 
         {/* Art. 4 */}
@@ -119,7 +119,7 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
         <View style={S.art}>
           <Text style={S.artTitle}>Article 5 — Dépôt de garantie</Text>
           <Champ label="Montant" value={formatPrix(data.depotGarantie)} />
-          <Text style={S.note}>Restituable dans les 30 jours suivant l&apos;état des lieux de sortie.</Text>
+          <Text style={S.note}>Restituable dans les 30 jours suivant l'état des lieux de sortie.</Text>
         </View>
 
         {/* Art. 6 */}
@@ -132,9 +132,9 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
         {/* Art. 7 */}
         <View style={S.art}>
           <Text style={S.artTitle}>Article 7 — Obligations du Bailleur</Text>
-          <Text>• Délivrer le bien en bon état d&apos;usage et de réparation</Text>
+          <Text>• Délivrer le bien en bon état d'usage et de réparation</Text>
           <Text>• Assurer la jouissance paisible du bien</Text>
-          <Text>• Réaliser les réparations importantes (gros œuvre, toiture, installations)</Text>
+          <Text>• Réaliser les réparations importantes (gros oeuvre, toiture, installations)</Text>
         </View>
 
         {/* Art. 8 */}
@@ -142,7 +142,7 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
           <Text style={S.artTitle}>Article 8 — Obligations du Preneur</Text>
           <Text>• Payer le loyer et les charges aux échéances convenues</Text>
           <Text>• User du bien en bon père de famille</Text>
-          <Text>• Ne pas sous-louer sans accord écrit du Bailleur</Text>
+          <Text>• Ne pas sous-louer sans accord ecrit du Bailleur</Text>
           <Text>• Restituer le bien en bon état en fin de bail</Text>
         </View>
 
