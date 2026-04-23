@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { CheckCircle, Clock, FileText, Send, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -13,7 +14,8 @@ type Props = {
 }
 
 export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
-  const { setMode } = useDashboardMode()
+  const router = useRouter()
+  const { mode, setMode } = useDashboardMode()
   const [loading, setLoading]     = useState(false)
   const [prix, setPrix]           = useState('')
   const [message, setMessage]     = useState('')
@@ -30,6 +32,11 @@ export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
   useEffect(() => {
     setMode(isVendeur ? 'proprietaire' : 'locataire')
   }, [isVendeur, setMode])
+
+  useEffect(() => {
+    if (mode === 'proprietaire' && !isVendeur)  router.push('/mon-espace/ventes')
+    if (mode === 'locataire'    &&  isVendeur)  router.push('/mon-espace/ventes')
+  }, [mode, isVendeur, router])
 
   async function faireOffre() {
     if (!prix) return toast.error('Saisissez un prix')
