@@ -50,8 +50,8 @@ export default function NotificationDetailClient({ notif }: { notif: any }) {
         {/* Corps complet */}
         <p className="text-brun-nuit leading-relaxed whitespace-pre-wrap">{notif.corps}</p>
 
-        {/* Bouton d'action — uniquement pour les liens internes (pas les magic links Supabase) */}
-        {notif.lien && notif.lien.startsWith('/') && (
+        {/* Bouton d'action — uniquement pour les routes dashboard/contenu connues */}
+        {notif.lien && ['/mon-espace/', '/moderateur/', '/admin/', '/biens/', '/proprietaire/'].some(p => notif.lien!.startsWith(p)) && (
           <Link
             href={notif.lien}
             className="btn-primary flex items-center justify-center gap-2 w-full"
