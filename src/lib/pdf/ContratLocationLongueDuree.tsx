@@ -1,12 +1,22 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
-import { formatPrix } from '@/lib/utils'
+import path from 'path'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+
+// Formatage FCFA sans espace insécable (Helvetica ne la contient pas → rendu en /)
+function fmt(n: number): string {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA'
+}
+
+const LOGO = path.join(process.cwd(), 'public/icons/icon-96x96.png')
 
 const S = StyleSheet.create({
   page:       { padding: 48, fontSize: 10, fontFamily: 'Helvetica', color: '#1a1a1a', lineHeight: 1.5 },
-  header:     { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, borderBottom: '2px solid #8B1A2E', paddingBottom: 12 },
-  logo:       { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#8B1A2E' },
-  logoSub:    { fontSize: 8, color: '#7a5c3a', marginTop: 2 },
+  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, borderBottom: '2px solid #8B1A2E', paddingBottom: 12 },
+  logoRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoImg:    { width: 36, height: 36 },
+  logoText:   { fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#8B1A2E' },
+  logoSub:    { fontSize: 7.5, color: '#7a5c3a', marginTop: 2 },
+  contacts:   { fontSize: 7.5, color: '#7a5c3a', textAlign: 'right', lineHeight: 1.6 },
   docTitle:   { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#8B1A2E', textAlign: 'center', marginBottom: 4 },
   numBox:     { backgroundColor: '#FAE8EC', padding: '6 12', borderRadius: 4, marginBottom: 20, textAlign: 'center' },
   numText:    { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#8B1A2E' },
@@ -67,95 +77,109 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
     <Document>
       <Page size="A4" style={S.page}>
 
+        {/* En-tête */}
         <View style={S.header}>
-          <View><Text style={S.logo}>LOFIA.</Text><Text style={S.logoSub}>Immobilier Togo · lofia.vercel.app</Text></View>
-          <Text style={{ fontSize: 9, color: '#7a5c3a', textAlign: 'right' }}>CONTRAT DE BAIL{'\n'}D'HABITATION</Text>
+          <View>
+            <View style={S.logoRow}>
+              <Image src={LOGO} style={S.logoImg} />
+              <Text style={S.logoText}>LOFIA.</Text>
+            </View>
+            <Text style={S.logoSub}>Plateforme immobiliere du Togo</Text>
+          </View>
+          <View>
+            <Text style={S.contacts}>
+              lofia.vercel.app{'\n'}
+              contact@lofia.com{'\n'}
+              +228 99 79 47 72{'\n'}
+              Lome, Togo
+            </Text>
+          </View>
         </View>
 
         <Text style={S.docTitle}>CONTRAT DE BAIL D'HABITATION</Text>
         <View style={S.numBox}>
-          <Text style={S.numText}>N° {data.numeroContrat}   ·   Établi le {data.dateContrat}</Text>
+          <Text style={S.numText}>N° {data.numeroContrat}   ·   Etabli le {data.dateContrat}</Text>
         </View>
 
         {/* Art. 1 */}
         <View style={S.art}>
           <Text style={S.artTitle}>Article 1 — Les parties</Text>
-          <Text style={[S.bold, { marginBottom: 3 }]}>Le Bailleur (Propriétaire)</Text>
+          <Text style={[S.bold, { marginBottom: 3 }]}>Le Bailleur (Proprietaire)</Text>
           <Champ label="Nom complet" value={data.nomProprio} />
-          <Champ label="Téléphone"  value={data.telProprio} />
+          <Champ label="Telephone"   value={data.telProprio} />
           <Text style={[S.bold, { marginTop: 6, marginBottom: 3 }]}>Le Preneur (Locataire)</Text>
           <Champ label="Nom complet" value={data.nomLocataire} />
-          <Champ label="Téléphone"  value={data.telLocataire} />
+          <Champ label="Telephone"   value={data.telLocataire} />
         </View>
 
         {/* Art. 2 */}
         <View style={S.art}>
-          <Text style={S.artTitle}>Article 2 — Désignation du bien</Text>
+          <Text style={S.artTitle}>Article 2 — Designation du bien</Text>
           <Champ label="Adresse"    value={data.adresseBien} />
           <Champ label="Type"       value={data.typeBien} />
-          {data.superficie && <Champ label="Surface" value={`${data.superficie} m²`} />}
-          {data.equipements?.length > 0 && <Champ label="Équipements" value={data.equipements.join(', ')} />}
+          {data.superficie ? <Champ label="Surface" value={`${data.superficie} m2`} /> : null}
+          {data.equipements?.length > 0 && <Champ label="Equipements" value={data.equipements.join(', ')} />}
         </View>
 
         {/* Art. 3 */}
         <View style={S.art}>
-          <Text style={S.artTitle}>Article 3 — Durée du bail</Text>
-          <Champ label="Durée"      value={`${data.dureeeMois} mois`} />
-          <Champ label="Date début" value={data.dateDebut} />
+          <Text style={S.artTitle}>Article 3 — Duree du bail</Text>
+          <Champ label="Duree"      value={`${data.dureeeMois} mois`} />
+          <Champ label="Date debut" value={data.dateDebut} />
           <Champ label="Date fin"   value={data.dateFin} />
-          <Text style={S.note}>Reconduction tacite si absence de résiliation 1 mois avant l'échéance.</Text>
+          <Text style={S.note}>Reconduction tacite si absence de resiliation 1 mois avant l'echeance.</Text>
         </View>
 
         {/* Art. 4 */}
         <View style={S.art}>
           <Text style={S.artTitle}>Article 4 — Loyer et charges</Text>
-          <Champ label="Loyer mensuel"  value={formatPrix(data.loyerMensuel)} />
-          <Champ label="Charges"        value={formatPrix(data.charges)} />
-          <Champ label="Total mensuel"  value={formatPrix(totalMensuel)} />
-          <Text style={S.note}>Payable le 5 de chaque mois. Mode : Espèces / Mobile Money / Virement.</Text>
+          <Champ label="Loyer mensuel"  value={fmt(data.loyerMensuel)} />
+          <Champ label="Charges"        value={fmt(data.charges)} />
+          <Champ label="Total mensuel"  value={fmt(totalMensuel)} />
+          <Text style={S.note}>Payable le 5 de chaque mois. Mode : Especes / Mobile Money / Virement.</Text>
         </View>
 
         {/* Art. 5 */}
         <View style={S.art}>
-          <Text style={S.artTitle}>Article 5 — Dépôt de garantie</Text>
-          <Champ label="Montant" value={formatPrix(data.depotGarantie)} />
-          <Text style={S.note}>Restituable dans les 30 jours suivant l'état des lieux de sortie.</Text>
+          <Text style={S.artTitle}>Article 5 — Depot de garantie</Text>
+          <Champ label="Montant" value={fmt(data.depotGarantie)} />
+          <Text style={S.note}>Restituable dans les 30 jours suivant l'etat des lieux de sortie.</Text>
         </View>
 
         {/* Art. 6 */}
         <View style={S.art}>
           <Text style={S.artTitle}>Article 6 — Frais de mise en relation LOFIA</Text>
-          <Champ label="Frais dossier" value={`${formatPrix(data.fraisDossier)} (à la charge du bailleur)`} />
-          <Text style={S.note}>Ce contrat a été généré et archivé par la plateforme LOFIA · lofia.vercel.app</Text>
+          <Champ label="Frais dossier" value={`${fmt(data.fraisDossier)} (a la charge du bailleur)`} />
+          <Text style={S.note}>Ce contrat a ete genere et archive par la plateforme LOFIA · lofia.vercel.app</Text>
         </View>
 
         {/* Art. 7 */}
         <View style={S.art}>
           <Text style={S.artTitle}>Article 7 — Obligations du Bailleur</Text>
-          <Text>• Délivrer le bien en bon état d'usage et de réparation</Text>
+          <Text>• Delivrer le bien en bon etat d'usage et de reparation</Text>
           <Text>• Assurer la jouissance paisible du bien</Text>
-          <Text>• Réaliser les réparations importantes (gros oeuvre, toiture, installations)</Text>
+          <Text>• Realiser les reparations importantes (gros oeuvre, toiture, installations)</Text>
         </View>
 
         {/* Art. 8 */}
         <View style={S.art}>
           <Text style={S.artTitle}>Article 8 — Obligations du Preneur</Text>
-          <Text>• Payer le loyer et les charges aux échéances convenues</Text>
-          <Text>• User du bien en bon père de famille</Text>
+          <Text>• Payer le loyer et les charges aux echeances convenues</Text>
+          <Text>• User du bien en bon pere de famille</Text>
           <Text>• Ne pas sous-louer sans accord ecrit du Bailleur</Text>
-          <Text>• Restituer le bien en bon état en fin de bail</Text>
+          <Text>• Restituer le bien en bon etat en fin de bail</Text>
         </View>
 
         {/* Art. 9 */}
         <View style={S.art}>
-          <Text style={S.artTitle}>Article 9 — Résiliation</Text>
-          <Text>Préavis locataire : 1 mois. Préavis bailleur : 3 mois (hors faute grave du preneur).</Text>
+          <Text style={S.artTitle}>Article 9 — Resiliation</Text>
+          <Text>Preavis locataire : 1 mois. Preavis bailleur : 3 mois (hors faute grave du preneur).</Text>
         </View>
 
-        {/* Conditions particulières */}
+        {/* Conditions particulieres */}
         {data.conditionsParticulieres && (
           <View style={S.art}>
-            <Text style={S.artTitle}>Conditions particulières</Text>
+            <Text style={S.artTitle}>Conditions particulieres</Text>
             <Text>{data.conditionsParticulieres}</Text>
           </View>
         )}
@@ -170,17 +194,18 @@ export function ContratLDPDF({ data }: { data: ContratLDData }) {
               <Text style={S.sigTitle}>{label}</Text>
               <Text style={{ marginBottom: 3 }}>{nom}</Text>
               {date
-                ? <Text style={{ fontSize: 8.5, color: '#2D6A4F' }}>✓ Validé le {date}{ip ? `\nIP : ${ip}` : ''}</Text>
+                ? <Text style={{ fontSize: 8.5, color: '#2D6A4F' }}>Valide le {date}{ip ? `\nIP : ${ip}` : ''}</Text>
                 : <View style={S.sigLine} />
               }
-              <Text style={S.sigMeta}>Validé électroniquement via LOFIA</Text>
+              <Text style={S.sigMeta}>Valide electroniquement via LOFIA</Text>
             </View>
           ))}
         </View>
 
+        {/* Pied de page */}
         <View style={S.foot} fixed>
-          <Text style={S.footTxt}>Contrat généré par LOFIA · lofia.vercel.app</Text>
-          <Text style={S.footTxt}>contact@lofia.com · Lomé, Togo</Text>
+          <Text style={S.footTxt}>Contrat genere par LOFIA · lofia.vercel.app</Text>
+          <Text style={S.footTxt}>contact@lofia.com · +228 99 79 47 72 · Lome, Togo</Text>
         </View>
 
       </Page>
