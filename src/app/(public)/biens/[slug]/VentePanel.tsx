@@ -14,6 +14,16 @@ export default function VentePanel({ bien }: { bien: Bien }) {
   const [message, setMessage] = useState('')
   const [codeVisite, setCode] = useState<string | null>(null)
 
+  if (user?.id === bien.owner_id) {
+    return (
+      <div className="bg-primary-50 border border-primary-100 rounded-2xl p-5 text-center">
+        <Building2 className="w-8 h-8 text-primary-300 mx-auto mb-2" />
+        <p className="text-sm font-semibold text-primary-600">Vous êtes le vendeur de ce bien</p>
+        <p className="text-xs text-brun-doux mt-1">Retrouvez les demandes de visite dans Mon espace → Ventes.</p>
+      </div>
+    )
+  }
+
   async function demanderVisite() {
     if (!user) { toast.error('Connectez-vous pour demander une visite'); router.push('/connexion'); return }
     setLoading(true)
