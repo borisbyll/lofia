@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { CheckCircle, Clock, FileText, Send, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { useDashboardMode } from '@/store/dashboardModeStore'
 
 type Props = {
   dvv: any
@@ -12,6 +13,7 @@ type Props = {
 }
 
 export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
+  const { setMode } = useDashboardMode()
   const [loading, setLoading]     = useState(false)
   const [prix, setPrix]           = useState('')
   const [message, setMessage]     = useState('')
@@ -24,6 +26,10 @@ export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
   const acheteur = dvv.acheteur as any
   const vendeur  = dvv.vendeur as any
   const isVendeur = dvv.vendeur_id === userId
+
+  useEffect(() => {
+    setMode(isVendeur ? 'proprietaire' : 'locataire')
+  }, [isVendeur, setMode])
 
   async function faireOffre() {
     if (!prix) return toast.error('Saisissez un prix')

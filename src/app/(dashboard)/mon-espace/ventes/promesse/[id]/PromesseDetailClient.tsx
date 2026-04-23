@@ -1,16 +1,22 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { CheckCircle, Clock, Download, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { useDashboardMode } from '@/store/dashboardModeStore'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://lofia.vercel.app'
 
 export default function PromesseDetailClient({ promesse, userId }: { promesse: any; userId: string }) {
+  const { setMode } = useDashboardMode()
   const [loading, setLoading] = useState(false)
 
   const isVendeur  = promesse.vendeur_id === userId
   const isAcheteur = promesse.acheteur_id === userId
+
+  useEffect(() => {
+    setMode(isVendeur ? 'proprietaire' : 'locataire')
+  }, [isVendeur, setMode])
   const alreadySigned = isVendeur ? promesse.signature_vendeur : promesse.signature_acheteur
   const partie = isVendeur ? 'vendeur' : 'acheteur'
   const token  = isVendeur ? promesse.token_signature_vendeur : promesse.token_signature_acheteur
