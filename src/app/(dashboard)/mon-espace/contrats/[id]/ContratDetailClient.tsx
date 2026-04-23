@@ -25,21 +25,24 @@ const STATUT_COLOR: Record<string, string> = {
 export default function ContratDetailClient({ contrat, userId, justSigned }: Props) {
   const router            = useRouter()
   const { mode, setMode } = useDashboardMode()
-  const [payLoading, setPayLoading] = useState(false)
+  const [payLoading, setPayLoading]   = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
   const isLocataire    = userId === contrat.locataire_id
   const isProprietaire = userId === contrat.proprietaire_id
 
-  // Auto-basculer le toggle au chargement selon le rôle sur CE contrat
+  // Auto-basculer le toggle au chargement + marquer initialisé
   useEffect(() => {
     setMode(isLocataire ? 'locataire' : 'proprietaire')
+    setInitialized(true)
   }, [isLocataire, setMode])
 
-  // Si le mode devient incompatible avec ce contrat → retour à la liste
+  // Rediriger seulement APRÈS l'initialisation, quand l'utilisateur change manuellement
   useEffect(() => {
+    if (!initialized) return
     if (mode === 'proprietaire' && !isProprietaire) router.push('/mon-espace/contrats')
     if (mode === 'locataire'    && !isLocataire)    router.push('/mon-espace/contrats')
-  }, [mode, isProprietaire, isLocataire, router])
+  }, [mode, initialized, isProprietaire, isLocataire, router])
   const jaiSigne       = isLocataire ? contrat.signe_par_locataire : contrat.signe_par_proprietaire
   const autreASigne    = isLocataire ? contrat.signe_par_proprietaire : contrat.signe_par_locataire
   const monToken       = isLocataire ? contrat.token_signature_locataire : contrat.token_signature_proprietaire

@@ -11,19 +11,22 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://lofia.vercel.app'
 export default function PromesseDetailClient({ promesse, userId }: { promesse: any; userId: string }) {
   const router = useRouter()
   const { mode, setMode } = useDashboardMode()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
   const isVendeur  = promesse.vendeur_id === userId
   const isAcheteur = promesse.acheteur_id === userId
 
   useEffect(() => {
     setMode(isVendeur ? 'proprietaire' : 'locataire')
+    setInitialized(true)
   }, [isVendeur, setMode])
 
   useEffect(() => {
-    if (mode === 'proprietaire' && !isVendeur)  router.push('/mon-espace/ventes')
-    if (mode === 'locataire'    &&  isVendeur)  router.push('/mon-espace/ventes')
-  }, [mode, isVendeur, router])
+    if (!initialized) return
+    if (mode === 'proprietaire' && !isVendeur) router.push('/mon-espace/ventes')
+    if (mode === 'locataire'    &&  isVendeur) router.push('/mon-espace/ventes')
+  }, [mode, initialized, isVendeur, router])
   const alreadySigned = isVendeur ? promesse.signature_vendeur : promesse.signature_acheteur
   const partie = isVendeur ? 'vendeur' : 'acheteur'
   const token  = isVendeur ? promesse.token_signature_vendeur : promesse.token_signature_acheteur

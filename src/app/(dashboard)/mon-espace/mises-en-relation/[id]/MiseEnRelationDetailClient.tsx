@@ -11,7 +11,8 @@ import { useDashboardMode } from '@/store/dashboardModeStore'
 export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { mer: any; contrat: any; userId: string }) {
   const router = useRouter()
   const { mode, setMode } = useDashboardMode()
-  const [loading, setLoading]       = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [initialized, setInitialized] = useState(false)
   const [dateVisite, setDateVisite] = useState(mer.date_visite_proposee?.split('T')[0] ?? '')
   const [heureVisite, setHeureVisite] = useState(
     mer.date_visite_proposee ? new Date(mer.date_visite_proposee).toTimeString().slice(0, 5) : '09:00'
@@ -23,16 +24,16 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
   const proprietaire = mer.proprietaire as any
   const isProprietaire = mer.proprietaire_id === userId
 
-  // Auto-basculer le toggle au chargement selon le rôle sur CETTE demande
   useEffect(() => {
     setMode(isProprietaire ? 'proprietaire' : 'locataire')
+    setInitialized(true)
   }, [isProprietaire, setMode])
 
-  // Si le mode devient incompatible → retour à la liste
   useEffect(() => {
+    if (!initialized) return
     if (mode === 'proprietaire' && !isProprietaire) router.push('/mon-espace/mises-en-relation')
     if (mode === 'locataire'    &&  isProprietaire) router.push('/mon-espace/mises-en-relation')
-  }, [mode, isProprietaire, router])
+  }, [mode, initialized, isProprietaire, router])
   const autre          = isProprietaire ? locataire : proprietaire
   const moi            = isProprietaire ? proprietaire : locataire
   const maConfirmation = isProprietaire ? current.visite_confirmee_proprietaire : current.visite_confirmee_locataire

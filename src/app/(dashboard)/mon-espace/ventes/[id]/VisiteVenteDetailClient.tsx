@@ -16,7 +16,8 @@ type Props = {
 export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
   const router = useRouter()
   const { mode, setMode } = useDashboardMode()
-  const [loading, setLoading]     = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [initialized, setInitialized] = useState(false)
   const [prix, setPrix]           = useState('')
   const [message, setMessage]     = useState('')
   const [reponse, setReponse]     = useState<'acceptee' | 'refusee' | 'contre_offre'>('acceptee')
@@ -31,12 +32,14 @@ export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
 
   useEffect(() => {
     setMode(isVendeur ? 'proprietaire' : 'locataire')
+    setInitialized(true)
   }, [isVendeur, setMode])
 
   useEffect(() => {
-    if (mode === 'proprietaire' && !isVendeur)  router.push('/mon-espace/ventes')
-    if (mode === 'locataire'    &&  isVendeur)  router.push('/mon-espace/ventes')
-  }, [mode, isVendeur, router])
+    if (!initialized) return
+    if (mode === 'proprietaire' && !isVendeur) router.push('/mon-espace/ventes')
+    if (mode === 'locataire'    &&  isVendeur) router.push('/mon-espace/ventes')
+  }, [mode, initialized, isVendeur, router])
 
   async function faireOffre() {
     if (!prix) return toast.error('Saisissez un prix')
