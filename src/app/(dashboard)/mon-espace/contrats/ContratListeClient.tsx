@@ -1,8 +1,11 @@
 'use client'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { FileText, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { formatPrix, formatDate, cn } from '@/lib/utils'
 import { useDashboardMode } from '@/store/dashboardModeStore'
+import { useAuthStore } from '@/store/authStore'
+import { supabase } from '@/lib/supabase/client'
 
 const STATUT: Record<string, { label: string; color: string }> = {
   brouillon:             { label: 'Brouillon',      color: 'bg-gray-100 text-gray-500' },
@@ -13,15 +16,40 @@ const STATUT: Record<string, { label: string; color: string }> = {
   resilie:               { label: 'Résilié',        color: 'bg-red-100 text-red-600' },
 }
 
-export default function ContratListeClient({ contrats, userId }: { contrats: any[]; userId: string }) {
+export default function ContratListeClient() {
   const { mode } = useDashboardMode()
+  const { user } = useAuthStore()
+  const [contrats, setContrats] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Filtrer selon le mode actif
-  const liste = contrats.filter(c =>
-    mode === 'proprietaire' ? c.proprietaire_id === userId : c.locataire_id === userId
-  )
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      const col = mode === 'proprietaire' ? 'proprietaire_id' : 'locataire_id'
+      const { data } = await supabase
+        .from('contrats_location')
+        .select('*, bien:biens(titre, ville), locataire:profiles!contrats_location_locataire_id_fkey(nom), proprietaire:profiles!contrats_location_proprietaire_id_fkey(nom)')
+        .eq(col, user!.id)
+        .order('created_at', { ascending: false })
+      if (!cancelled) {
+        setContrats(data ?? [])
+        setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [mode, user])
 
   const roleLabel = mode === 'proprietaire' ? 'Propriétaire' : 'Locataire'
+
+  if (loading) return (
+    <div className="p-4 md:p-6 pb-nav space-y-3">
+      <div className="skeleton h-8 w-48 rounded-xl" />
+      {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-20 rounded-2xl" />)}
+    </div>
+  )
 
   return (
     <div className="p-4 md:p-6 pb-nav">
@@ -30,7 +58,7 @@ export default function ContratListeClient({ contrats, userId }: { contrats: any
         <p className="page-subtitle">Location longue durée · {roleLabel}</p>
       </div>
 
-      {liste.length === 0 ? (
+      {contrats.length === 0 ? (
         <div className="text-center py-16">
           <FileText size={40} className="mx-auto mb-3 opacity-30" />
           <p className="font-semibold" style={{ color: '#1a0a00' }}>Aucun contrat en mode {roleLabel}</p>
@@ -42,7 +70,7 @@ export default function ContratListeClient({ contrats, userId }: { contrats: any
         </div>
       ) : (
         <div className="space-y-3">
-          {liste.map((c: any) => {
+          {contrats.map((c: any) => {
             const s = STATUT[c.statut] ?? STATUT.brouillon
             const autre    = mode === 'locataire' ? c.proprietaire?.nom : c.locataire?.nom
             const jaiSigne = mode === 'locataire' ? c.signe_par_locataire : c.signe_par_proprietaire

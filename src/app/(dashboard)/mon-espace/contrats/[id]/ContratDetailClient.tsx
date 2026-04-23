@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Clock, Download, FileText, AlertCircle, Loader2, Printer } from 'lucide-react'
+import { CheckCircle2, Clock, Download, FileText, AlertCircle, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatPrix, formatDate, cn } from '@/lib/utils'
 import { useDashboardMode } from '@/store/dashboardModeStore'
@@ -144,35 +144,12 @@ export default function ContratDetailClient({ contrat, userId, justSigned }: Pro
         )}
 
         {contrat.pdf_url && (
-          <>
-            <a
-              href={`/api/pdf-download?url=${encodeURIComponent(contrat.pdf_url)}&filename=${encodeURIComponent(`contrat-${contrat.numero_contrat}.pdf`)}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold border-2 hover:bg-primary-50 transition-colors min-h-[48px]"
-              style={{ borderColor: '#8B1A2E', color: '#8B1A2E' }}>
-              <FileText size={16} /> Visualiser le contrat PDF
-            </a>
-            <a
-              href={`/api/pdf-download?url=${encodeURIComponent(contrat.pdf_url)}&filename=${encodeURIComponent(`contrat-${contrat.numero_contrat}.pdf`)}`}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold bg-gray-50 hover:bg-gray-100 min-h-[48px]"
-              style={{ color: '#1a0a00' }}>
-              <Download size={16} /> Télécharger le PDF
-            </a>
-            <a
-              href={`/api/pdf-download?url=${encodeURIComponent(contrat.pdf_url)}&filename=${encodeURIComponent(`contrat-${contrat.numero_contrat}.pdf`)}`}
-              target="_blank" rel="noopener noreferrer"
-              onClick={e => {
-                e.preventDefault()
-                const proxyUrl = `/api/pdf-download?url=${encodeURIComponent(contrat.pdf_url)}&filename=${encodeURIComponent(`contrat-${contrat.numero_contrat}.pdf`)}`
-                const w = window.open(proxyUrl, '_blank')
-                w?.focus()
-                setTimeout(() => w?.print(), 1500)
-              }}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold bg-primary-50 hover:bg-primary-100 min-h-[48px]"
-              style={{ color: '#8B1A2E' }}>
-              <Printer size={16} /> Imprimer le contrat
-            </a>
-          </>
+          <a
+            href={`/api/pdf-download?url=${encodeURIComponent(contrat.pdf_url)}&filename=${encodeURIComponent(`contrat-${contrat.numero_contrat}.pdf`)}`}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold border-2 hover:bg-primary-50 transition-colors min-h-[48px]"
+            style={{ borderColor: '#8B1A2E', color: '#8B1A2E' }}>
+            <Download size={16} /> Télécharger le contrat PDF
+          </a>
         )}
       </div>
     </div>
