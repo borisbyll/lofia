@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { formatPrix, formatDate } from '@/lib/utils'
@@ -16,8 +16,8 @@ type Props = {
 export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
   const router = useRouter()
   const { mode, setMode } = useDashboardMode()
-  const [loading, setLoading]         = useState(false)
-  const [initialized, setInitialized] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const prevModeRef = useRef<string | null>(null)
   const [prix, setPrix]           = useState('')
   const [message, setMessage]     = useState('')
   const [reponse, setReponse]     = useState<'acceptee' | 'refusee' | 'contre_offre'>('acceptee')
@@ -30,16 +30,20 @@ export default function VisiteVenteDetailClient({ dvv, offre, userId }: Props) {
   const vendeur  = dvv.vendeur as any
   const isVendeur = dvv.vendeur_id === userId
 
-  useEffect(() => {
-    setMode(isVendeur ? 'proprietaire' : 'locataire')
-    setInitialized(true)
-  }, [isVendeur, setMode])
+  const expectedMode = isVendeur ? 'proprietaire' : 'locataire'
 
   useEffect(() => {
-    if (!initialized) return
-    if (mode === 'proprietaire' && !isVendeur) router.push('/mon-espace/ventes')
-    if (mode === 'locataire'    &&  isVendeur) router.push('/mon-espace/ventes')
-  }, [mode, initialized, isVendeur, router])
+    setMode(expectedMode)
+  }, [expectedMode, setMode])
+
+  useEffect(() => {
+    const prev = prevModeRef.current
+    prevModeRef.current = mode
+    if (prev === null) return
+    if (prev === mode) return
+    if (mode === expectedMode) return
+    router.push('/mon-espace/ventes')
+  }, [mode, expectedMode, router])
 
   async function faireOffre() {
     if (!prix) return toast.error('Saisissez un prix')

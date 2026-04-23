@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Clock, Download, FileText, AlertCircle, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -25,24 +25,28 @@ const STATUT_COLOR: Record<string, string> = {
 export default function ContratDetailClient({ contrat, userId, justSigned }: Props) {
   const router            = useRouter()
   const { mode, setMode } = useDashboardMode()
-  const [payLoading, setPayLoading]   = useState(false)
-  const [initialized, setInitialized] = useState(false)
+  const [payLoading, setPayLoading] = useState(false)
+  const prevModeRef = useRef<string | null>(null)
 
   const isLocataire    = userId === contrat.locataire_id
   const isProprietaire = userId === contrat.proprietaire_id
+  const expectedMode   = isLocataire ? 'locataire' : 'proprietaire'
 
-  // Auto-basculer le toggle au chargement + marquer initialisé
+  // Auto-switch au chargement
   useEffect(() => {
-    setMode(isLocataire ? 'locataire' : 'proprietaire')
-    setInitialized(true)
-  }, [isLocataire, setMode])
+    setMode(expectedMode)
+  }, [expectedMode, setMode])
 
-  // Rediriger seulement APRÈS l'initialisation, quand l'utilisateur change manuellement
+  // Rediriger uniquement quand l'utilisateur change MANUELLEMENT le mode
+  // (pas lors de l'auto-switch initial)
   useEffect(() => {
-    if (!initialized) return
-    if (mode === 'proprietaire' && !isProprietaire) router.push('/mon-espace/contrats')
-    if (mode === 'locataire'    && !isLocataire)    router.push('/mon-espace/contrats')
-  }, [mode, initialized, isProprietaire, isLocataire, router])
+    const prev = prevModeRef.current
+    prevModeRef.current = mode
+    if (prev === null) return              // premier rendu → skip
+    if (prev === mode) return              // mode inchangé → skip
+    if (mode === expectedMode) return      // c'est l'auto-switch → skip
+    router.push('/mon-espace/contrats')
+  }, [mode, expectedMode, router])
   const jaiSigne       = isLocataire ? contrat.signe_par_locataire : contrat.signe_par_proprietaire
   const autreASigne    = isLocataire ? contrat.signe_par_proprietaire : contrat.signe_par_locataire
   const monToken       = isLocataire ? contrat.token_signature_locataire : contrat.token_signature_proprietaire
