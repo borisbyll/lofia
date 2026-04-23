@@ -1,14 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { CheckCircle, Clock, ArrowLeft, Calendar, FileText, Home, User, Phone } from 'lucide-react'
 import { toast } from 'sonner'
+import { useDashboardMode } from '@/store/dashboardModeStore'
 
 export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { mer: any; contrat: any; userId: string }) {
   const router = useRouter()
+  const { setMode } = useDashboardMode()
   const [loading, setLoading]       = useState(false)
   const [dateVisite, setDateVisite] = useState(mer.date_visite_proposee?.split('T')[0] ?? '')
   const [heureVisite, setHeureVisite] = useState(
@@ -20,6 +22,11 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
   const locataire    = mer.locataire as any
   const proprietaire = mer.proprietaire as any
   const isProprietaire = mer.proprietaire_id === userId
+
+  // Auto-basculer le toggle selon le rôle dans cette mise en relation
+  useEffect(() => {
+    setMode(isProprietaire ? 'proprietaire' : 'locataire')
+  }, [isProprietaire, setMode])
   const autre          = isProprietaire ? locataire : proprietaire
   const moi            = isProprietaire ? proprietaire : locataire
   const maConfirmation = isProprietaire ? current.visite_confirmee_proprietaire : current.visite_confirmee_locataire

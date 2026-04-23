@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Clock, Download, FileText, AlertCircle, Loader2, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatPrix, formatDate, cn } from '@/lib/utils'
+import { useDashboardMode } from '@/store/dashboardModeStore'
 
 interface Props {
   contrat:    any
@@ -23,10 +24,16 @@ const STATUT_COLOR: Record<string, string> = {
 
 export default function ContratDetailClient({ contrat, userId, justSigned }: Props) {
   const router      = useRouter()
+  const { setMode } = useDashboardMode()
   const [payLoading, setPayLoading] = useState(false)
 
   const isLocataire    = userId === contrat.locataire_id
   const isProprietaire = userId === contrat.proprietaire_id
+
+  // Auto-basculer le toggle selon le rôle de l'utilisateur dans ce contrat
+  useEffect(() => {
+    setMode(isLocataire ? 'locataire' : 'proprietaire')
+  }, [isLocataire, setMode])
   const jaiSigne       = isLocataire ? contrat.signe_par_locataire : contrat.signe_par_proprietaire
   const autreASigne    = isLocataire ? contrat.signe_par_proprietaire : contrat.signe_par_locataire
   const monToken       = isLocataire ? contrat.token_signature_locataire : contrat.token_signature_proprietaire

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { formatDate } from '@/lib/utils'
 import { Users, ChevronRight, Clock, CheckCircle, FileText } from 'lucide-react'
+import { useDashboardMode } from '@/store/dashboardModeStore'
 
 const STATUT_LABEL: Record<string, string> = {
   en_attente:       'En attente',
@@ -22,14 +23,23 @@ const STATUT_BADGE: Record<string, string> = {
 }
 
 export default function MisesEnRelationClient({ mers, userId }: { mers: any[]; userId: string }) {
-  if (mers.length === 0) return (
+  const { mode } = useDashboardMode()
+
+  // Filtrer selon le mode actif
+  const liste = mers.filter(m =>
+    mode === 'proprietaire' ? m.proprietaire_id === userId : m.locataire_id === userId
+  )
+
+  if (liste.length === 0) return (
     <div className="p-4 md:p-6 pb-nav">
       <div className="page-header mb-6">
         <h1 className="page-title flex items-center gap-2"><Users className="w-5 h-5" /> Demandes de visite — Location</h1>
       </div>
       <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
         <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-        <p className="text-brun-doux font-semibold">Aucune demande de visite</p>
+        <p className="text-brun-doux font-semibold">
+          Aucune demande de visite en mode {mode === 'proprietaire' ? 'Propriétaire' : 'Locataire'}
+        </p>
       </div>
     </div>
   )
@@ -38,11 +48,11 @@ export default function MisesEnRelationClient({ mers, userId }: { mers: any[]; u
     <div className="p-4 md:p-6 pb-nav">
       <div className="page-header mb-6">
         <h1 className="page-title flex items-center gap-2"><Users className="w-5 h-5" /> Demandes de visite — Location</h1>
-        <p className="page-subtitle">{mers.length} demande{mers.length > 1 ? 's' : ''}</p>
+        <p className="page-subtitle">{liste.length} demande{liste.length > 1 ? 's' : ''} · {mode === 'proprietaire' ? 'Propriétaire' : 'Locataire'}</p>
       </div>
 
       <div className="space-y-3">
-        {mers.map(mer => {
+        {liste.map(mer => {
           const bien        = mer.bien as any
           const locataire   = mer.locataire as any
           const proprietaire = mer.proprietaire as any
