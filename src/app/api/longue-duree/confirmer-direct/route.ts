@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         type: 'visite_confirmee_partielle',
         titre: isProprietaire ? 'Le propriétaire a confirmé la visite' : 'Le locataire a confirmé la visite',
         corps: date_visite
-          ? `Une date de visite a été proposée : ${new Date(date_visite).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}. Confirmez depuis votre espace.`
+          ? `Une date de visite a été proposée : ${new Date(date_visite).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })} à ${new Date(date_visite).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Confirmez depuis votre espace.`
           : 'Connectez-vous pour confirmer la visite de votre côté.',
         lien: `/mon-espace/mises-en-relation/${mer_id}`,
       })

@@ -11,6 +11,9 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
   const router = useRouter()
   const [loading, setLoading]       = useState(false)
   const [dateVisite, setDateVisite] = useState(mer.date_visite_proposee?.split('T')[0] ?? '')
+  const [heureVisite, setHeureVisite] = useState(
+    mer.date_visite_proposee ? new Date(mer.date_visite_proposee).toTimeString().slice(0, 5) : '09:00'
+  )
   const [current, setCurrent]       = useState(mer)
 
   const bien         = mer.bien as any
@@ -26,7 +29,7 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
     const r = await fetch('/api/longue-duree/confirmer-direct', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mer_id: mer.id, date_visite: dateVisite || undefined }),
+      body: JSON.stringify({ mer_id: mer.id, date_visite: dateVisite ? `${dateVisite}T${heureVisite}:00` : undefined }),
     })
     const d = await r.json()
     setLoading(false)
@@ -124,12 +127,22 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
           </div>
         </div>
 
-        {/* Proposer une date */}
+        {/* Proposer une date + heure */}
         {current.statut === 'en_attente' && (
-          <div>
-            <label className="label-field text-xs">Date de visite proposée (facultatif)</label>
-            <input type="date" value={dateVisite} onChange={e => setDateVisite(e.target.value)}
-              min={new Date().toISOString().split('T')[0]} className="input-field" />
+          <div className="space-y-3">
+            <p className="label-field text-xs">Date et heure de visite proposées (facultatif)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-brun-doux font-medium mb-1 block">Date</label>
+                <input type="date" value={dateVisite} onChange={e => setDateVisite(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]} className="input-field" />
+              </div>
+              <div>
+                <label className="text-[11px] text-brun-doux font-medium mb-1 block">Heure</label>
+                <input type="time" value={heureVisite} onChange={e => setHeureVisite(e.target.value)}
+                  className="input-field" />
+              </div>
+            </div>
           </div>
         )}
 
@@ -147,9 +160,14 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
         {current.date_visite_proposee && (
           <div className="bg-green-50 rounded-xl p-3 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-green-600 shrink-0" />
-            <p className="text-sm text-green-700 font-semibold">
-              Date proposée : {formatDate(current.date_visite_proposee)}
-            </p>
+            <div>
+              <p className="text-sm text-green-700 font-semibold">
+                {formatDate(current.date_visite_proposee)}
+              </p>
+              <p className="text-xs text-green-600">
+                {new Date(current.date_visite_proposee).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
           </div>
         )}
       </div>
