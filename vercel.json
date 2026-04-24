@@ -1,0 +1,10 @@
+{
+  "crons": [
+    { "path": "/api/cron/expirer-sponsorisations",       "schedule": "0 * * * *" },
+    { "path": "/api/cron/rappels-sponsoring",            "schedule": "0 9 * * *" },
+    { "path": "/api/cron/passer-reservations-en-cours",  "schedule": "0 * * * *" },
+    { "path": "/api/cron/declencher-virements",          "schedule": "0 8 * * *" },
+    { "path": "/api/cron/envoyer-demandes-avis",         "schedule": "0 10 * * *" },
+    { "path": "/api/cron/expirer-tokens-decision",       "schedule": "0 2 * * *" }
+  ]
+}

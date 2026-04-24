@@ -1,18 +1,12 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Home, Send, CheckCircle } from 'lucide-react'
-import { toast } from 'sonner'
+import Link from 'next/link'
+import { Home } from 'lucide-react'
 import { formatPrix } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import type { Bien } from '@/types/immobilier'
 
 export default function LongueDureePanel({ bien }: { bien: Bien }) {
-  const { user }    = useAuthStore()
-  const router      = useRouter()
-  const [loading, setLoading]   = useState(false)
-  const [message, setMessage]   = useState('')
-  const [codeVisite, setCode]   = useState<string | null>(null)
+  const { user } = useAuthStore()
 
   if (user?.id === bien.owner_id) {
     return (
@@ -20,38 +14,6 @@ export default function LongueDureePanel({ bien }: { bien: Bien }) {
         <Home className="w-8 h-8 text-primary-300 mx-auto mb-2" />
         <p className="text-sm font-semibold text-primary-600">Vous êtes le propriétaire de ce bien</p>
         <p className="text-xs text-brun-doux mt-1">Retrouvez les demandes de visite dans Mon espace → Visites.</p>
-      </div>
-    )
-  }
-
-  async function demanderVisite() {
-    if (!user) { toast.error('Connectez-vous pour demander une visite'); router.push('/connexion'); return }
-    setLoading(true)
-    const r = await fetch('/api/longue-duree/demander-contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bien_id: bien.id, message }),
-    })
-    const d = await r.json()
-    setLoading(false)
-    if (d.code_visite) {
-      setCode(d.code_visite)
-      toast.success(d.already_exists ? 'Demande déjà envoyée' : 'Demande envoyée !')
-    } else {
-      toast.error(d.error ?? 'Erreur')
-    }
-  }
-
-  if (codeVisite) {
-    return (
-      <div className="bg-white border-2 border-green-500 rounded-2xl p-5 space-y-3">
-        <div className="flex items-center gap-2 text-green-600">
-          <CheckCircle className="w-5 h-5" />
-          <p className="font-bold">Demande envoyée !</p>
-        </div>
-        <p className="text-sm text-brun-doux">Votre code de visite :</p>
-        <p className="font-mono font-black text-xl text-primary-500 text-center bg-primary-50 rounded-xl py-3">{codeVisite}</p>
-        <p className="text-xs text-brun-doux text-center">Conservez ce code. Le propriétaire va vous contacter pour confirmer la visite.</p>
       </div>
     )
   }
@@ -68,24 +30,23 @@ export default function LongueDureePanel({ bien }: { bien: Bien }) {
         </p>
       </div>
 
-      <div>
-        <label className="label-field text-xs">Message au propriétaire (facultatif)</label>
-        <textarea
-          value={message}
-          onChange={e => setMessage(e.target.value)}
-          className="input-field resize-none text-sm"
-          rows={3}
-          placeholder="Présentez-vous, précisez votre situation..."
-        />
+      <div className="bg-or-pale rounded-xl p-3 text-xs text-brun-doux space-y-1">
+        <p className="font-semibold text-brun-nuit">Comment ça marche ?</p>
+        <p>1. Demandez une visite (5 000 FCFA)</p>
+        <p>2. Visitez le bien avec un agent LOFIA</p>
+        <p>3. Si intéressé → contrat + signature</p>
+        <p>4. Premier loyer + caution à la signature</p>
       </div>
 
-      <button onClick={demanderVisite} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
-        <Send className="w-4 h-4" />
-        {loading ? 'Envoi…' : 'Demander une visite'}
-      </button>
+      <Link
+        href={`/biens/${bien.slug}/demander-visite`}
+        className="btn-primary w-full flex items-center justify-center gap-2 text-center"
+      >
+        Demander une visite — 5 000 FCFA
+      </Link>
 
       <p className="text-[11px] text-center text-brun-doux">
-        Un code de visite vous sera attribué. Aucun paiement requis à cette étape.
+        Processus sécurisé LOFIA. · Frais de visite non remboursables
       </p>
     </div>
   )

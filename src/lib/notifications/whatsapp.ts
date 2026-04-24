@@ -33,6 +33,10 @@ async function send(to: string, body: string): Promise<void> {
   }
 }
 
+export async function envoyerWhatsApp(p: { telephone: string; message: string }): Promise<void> {
+  await send(p.telephone, p.message)
+}
+
 // ── Courte durée ─────────────────────────────────────────────────────
 
 export async function notifReservationConfirmee(p: { tel: string; titreBien: string; dateArrivee: string; dateDepart: string; montant: string; lien: string }) {

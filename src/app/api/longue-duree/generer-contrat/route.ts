@@ -16,25 +16,37 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-    const { mise_en_relation_id, loyer_mensuel, charges_mensuelles = 0, duree_mois, date_debut, depot_garantie, conditions_particulieres } = await request.json()
-    if (!mise_en_relation_id || !loyer_mensuel || !duree_mois || !date_debut) {
+    const { mise_en_relation_id, dossier_id, loyer_mensuel, charges_mensuelles = 0, duree_mois, date_debut, depot_garantie, frais_dossier: frais_input, conditions_particulieres } = await request.json()
+    const sourceId = mise_en_relation_id ?? dossier_id
+    if (!sourceId || !loyer_mensuel || !duree_mois || !date_debut) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
     }
 
-    const { data: mer } = await supabaseAdmin
-      .from('mises_en_relation')
-      .select('*, bien:biens(id, titre, adresse, quartier, ville, type_bien, superficie, equipements), locataire:profiles!mises_en_relation_locataire_id_fkey(id, nom, phone), proprietaire:profiles!mises_en_relation_proprietaire_id_fkey(id, nom, phone)')
-      .eq('id', mise_en_relation_id)
-      .single()
-
-    if (!mer) return NextResponse.json({ error: 'Mise en relation introuvable' }, { status: 404 })
-    if (mer.proprietaire_id !== user.id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    let mer: any = null
+    if (mise_en_relation_id) {
+      const { data } = await supabaseAdmin
+        .from('mises_en_relation')
+        .select('*, bien:biens(id, titre, adresse, quartier, ville, type_bien, superficie, equipements), locataire:profiles!mises_en_relation_locataire_id_fkey(id, nom, phone), proprietaire:profiles!mises_en_relation_proprietaire_id_fkey(id, nom, phone)')
+        .eq('id', mise_en_relation_id)
+        .single()
+      mer = data
+      if (!mer) return NextResponse.json({ error: 'Mise en relation introuvable' }, { status: 404 })
+      if (mer.proprietaire_id !== user.id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    } else {
+      const { data } = await supabaseAdmin
+        .from('dossiers_longue_duree')
+        .select('*, bien:biens(id, titre, adresse, quartier, ville, type_bien, superficie, equipements), locataire:profiles!locataire_id(id, nom, phone), proprietaire:profiles!proprietaire_id(id, nom, phone)')
+        .eq('id', dossier_id)
+        .single()
+      mer = data
+      if (!mer) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
+    }
 
     const bien       = mer.bien as any
     const locataire  = mer.locataire as any
     const proprio    = mer.proprietaire as any
     const finDate    = new Date(date_debut); finDate.setMonth(finDate.getMonth() + duree_mois)
-    const frais_dossier   = Math.round(loyer_mensuel * 0.5)
+    const frais_dossier   = frais_input ?? Math.round(loyer_mensuel * 0.5)
     const numeroContrat   = genererNumeroContrat()
     const adresse         = [bien.adresse, bien.quartier, bien.ville].filter(Boolean).join(', ')
     const token_loc = crypto.randomUUID()
@@ -69,7 +81,7 @@ export async function POST(request: Request) {
     const { data: contrat, error: contratErr } = await supabaseAdmin
       .from('contrats_location')
       .insert({
-        mise_en_relation_id,
+        ...(mise_en_relation_id ? { mise_en_relation_id } : { dossier_id }),
         bien_id: bien.id, locataire_id: mer.locataire_id, proprietaire_id: mer.proprietaire_id,
         numero_contrat: numeroContrat, loyer_mensuel, charges_mensuelles, duree_mois,
         date_debut, date_fin: finDate.toISOString().split('T')[0],
@@ -82,7 +94,11 @@ export async function POST(request: Request) {
 
     if (contratErr) return NextResponse.json({ error: contratErr.message }, { status: 500 })
 
-    await supabaseAdmin.from('mises_en_relation').update({ statut: 'contrat_en_cours', updated_at: new Date().toISOString() }).eq('id', mise_en_relation_id)
+    if (mise_en_relation_id) {
+      await supabaseAdmin.from('mises_en_relation').update({ statut: 'contrat_en_cours', updated_at: new Date().toISOString() }).eq('id', mise_en_relation_id)
+    } else if (dossier_id) {
+      await supabaseAdmin.from('dossiers_longue_duree').update({ statut: 'contrat_en_cours' }).eq('id', dossier_id)
+    }
 
     await notifContratPret({
       telLoc: locataire.phone ?? '', telPro: proprio.phone ?? '',

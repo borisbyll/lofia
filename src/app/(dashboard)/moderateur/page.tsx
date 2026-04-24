@@ -91,10 +91,24 @@ export default function DashboardModPage() {
         })}
       </div>
 
+      {/* Raccourcis */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: 'Annonces vente',        href: '/moderateur/annonces-vente',                 color: 'bg-primary-50 text-primary-600' },
+          { label: 'Dossiers location',     href: '/moderateur/dossiers/longue-duree',           color: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Dossiers vente',        href: '/moderateur/dossiers/vente',                  color: 'bg-blue-50 text-blue-700' },
+          { label: 'Signalements',          href: '/moderateur/signalements',                    color: 'bg-orange-50 text-orange-700' },
+        ].map(l => (
+          <Link key={l.href} href={l.href} className={`rounded-xl px-4 py-3 text-sm font-semibold flex items-center justify-between ${l.color} hover:opacity-80 transition-opacity`}>
+            {l.label} <ArrowRight size={14} />
+          </Link>
+        ))}
+      </div>
+
       {/* File d'attente */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between p-5 border-b border-gray-50">
-          <h2 className="font-bold text-gray-900">Annonces en attente de validation</h2>
+          <h2 className="font-bold text-gray-900">Annonces location en attente</h2>
           <Link href="/moderateur/signalements" className="text-xs text-primary-500 font-semibold flex items-center gap-1 hover:underline">
             Signalements <ArrowRight size={12} />
           </Link>

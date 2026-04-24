@@ -34,20 +34,23 @@ export async function middleware(request: NextRequest) {
   const modRoutes = ['/moderateur']
   // Routes nécessitant le rôle admin uniquement
   const adminRoutes = ['/admin']
+  // Routes réservées aux agents terrain (role = agent | moderateur | admin)
+  const agentRoutes = ['/agent']
 
   const isAuthRequired  = authRequired.some(p => pathname.startsWith(p))
   const isModRoute      = modRoutes.some(p => pathname.startsWith(p))
   const isAdminRoute    = adminRoutes.some(p => pathname.startsWith(p))
+  const isAgentRoute    = agentRoutes.some(p => pathname.startsWith(p))
 
   // Non authentifié → redirect connexion
-  if ((isAuthRequired || isModRoute || isAdminRoute) && !user) {
+  if ((isAuthRequired || isModRoute || isAdminRoute || isAgentRoute) && !user) {
     const loginUrl = new URL('/connexion', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Vérification des rôles pour les routes modérateur et admin
-  if (user && (isModRoute || isAdminRoute)) {
+  // Vérification des rôles pour les routes protégées
+  if (user && (isModRoute || isAdminRoute || isAgentRoute)) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -57,12 +60,14 @@ export async function middleware(request: NextRequest) {
     const role = profile?.role
 
     if (isAdminRoute && role !== 'admin') {
-      // Pas admin → redirect vers son espace
       return NextResponse.redirect(new URL('/mon-espace', request.url))
     }
 
     if (isModRoute && role !== 'moderateur' && role !== 'admin') {
-      // Pas modérateur ni admin → redirect vers son espace
+      return NextResponse.redirect(new URL('/mon-espace', request.url))
+    }
+
+    if (isAgentRoute && !['agent', 'moderateur', 'admin'].includes(role ?? '')) {
       return NextResponse.redirect(new URL('/mon-espace', request.url))
     }
   }
