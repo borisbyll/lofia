@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // Vérifier chevauchement dans disponibilites (type = reserve ou bloque)
-    const { data: conflits } = await supabaseAdmin
+    const { data: conflitsDispo } = await supabaseAdmin
       .from('disponibilites')
       .select('id')
       .eq('bien_id', bien_id)
@@ -22,7 +22,21 @@ export async function POST(request: Request) {
       .lt('date_debut', date_depart)
       .gt('date_fin',   date_arrivee)
 
-    if (conflits && conflits.length > 0) {
+    if (conflitsDispo && conflitsDispo.length > 0) {
+      return NextResponse.json({ disponible: false })
+    }
+
+    // Vérifier aussi les réservations en_attente (paiement non encore confirmé)
+    // afin d'éviter le double booking pendant la fenêtre de paiement
+    const { data: conflitsResa } = await supabaseAdmin
+      .from('reservations')
+      .select('id')
+      .eq('bien_id', bien_id)
+      .not('statut', 'in', '(annulee,expiree)')
+      .lt('date_debut', date_depart)
+      .gt('date_fin',   date_arrivee)
+
+    if (conflitsResa && conflitsResa.length > 0) {
       return NextResponse.json({ disponible: false })
     }
 

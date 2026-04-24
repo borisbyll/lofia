@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   MapPin, BedDouble, Bath, Maximize2, Eye, Heart,
   MessageSquare, Share2, ShieldCheck, Star,
-  ChevronLeft, ChevronRight, Flag, Calendar,
+  ChevronLeft, ChevronRight, Flag, Calendar, X,
   Building2, Key, Lock
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -22,6 +22,7 @@ import ReservationPanel from './ReservationPanel'
 import LongueDureePanel from './LongueDureePanel'
 import VentePanel from './VentePanel'
 import SignalementModal from './SignalementModal'
+import CalendrierDisponibilite from '@/components/reservations/CalendrierDisponibilite'
 
 const MapApproximatif = dynamic(() => import('@/components/biens/MapApproximatif'), {
   ssr: false,
@@ -39,6 +40,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
 
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
+  const [showDispo, setShowDispo] = useState(false)
 
   const isCourte = bien.categorie === 'location' && bien.type_location === 'courte_duree'
 
@@ -216,6 +218,15 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                       )}
                     </p>
                   </div>
+                  {/* Bouton disponibilité — connecté + courte durée uniquement */}
+                  {isCourte && user && user.id !== bien.owner_id && (
+                    <button
+                      onClick={() => setShowDispo(true)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-primary-500 border border-primary-200 bg-primary-50 px-3 py-2 rounded-xl hover:bg-primary-100 transition-colors min-h-[36px]"
+                    >
+                      <Calendar size={13} /> Voir disponibilités
+                    </button>
+                  )}
                 </div>
 
                 {/* Partage */}
@@ -402,6 +413,29 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
       </div>
 
       {showSignalement && <SignalementModal bienId={bien.id} onClose={() => setShowSignalement(false)} />}
+
+      {/* Modal disponibilités */}
+      {showDispo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDispo(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-black text-brun-nuit">Disponibilités</h3>
+                <p className="text-xs text-brun-doux mt-0.5">{bien.titre}</p>
+              </div>
+              <button onClick={() => setShowDispo(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Fermer">
+                <X size={18} className="text-gray-400" />
+              </button>
+            </div>
+            <div className="p-4">
+              <CalendrierDisponibilite bienId={bien.id} readOnly />
+              <p className="text-[10px] text-center text-brun-doux mt-3">
+                Cliquez sur &quot;Réserver&quot; dans le panneau pour choisir vos dates.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
