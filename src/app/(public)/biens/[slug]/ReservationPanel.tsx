@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Calendar, Loader2, AlertCircle, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -18,9 +18,12 @@ interface Selection { dateArrivee: string; dateDepart: string; nbNuits: number; 
 export default function ReservationPanel({ bien }: Props) {
   const { user }  = useAuthStore()
   const router    = useRouter()
-  const [selection, setSelection] = useState<Selection | null>(null)
-  const [loading,   setLoading]   = useState(false)
+  const [selection,    setSelection]    = useState<Selection | null>(null)
+  const [loading,      setLoading]      = useState(false)
   const [showCalModal, setShowCalModal] = useState(false)
+  const [mounted,      setMounted]      = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const prixBase       = selection ? bien.prix * selection.nbNuits : 0
   const commission     = Math.round(prixBase * COMMISSION.VOYAGEUR_PCT / 100)
@@ -144,7 +147,7 @@ export default function ReservationPanel({ bien }: Props) {
         </button>
 
         {/* Bouton voir disponibilité (utilisateur connecté uniquement) */}
-        {user && (
+        {mounted && user && (
           <button
             onClick={() => setShowCalModal(true)}
             className="w-full text-xs text-center text-brun-doux hover:text-primary-500 underline underline-offset-2 transition-colors"

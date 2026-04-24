@@ -41,8 +41,11 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
   const [showDispo, setShowDispo] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   const isCourte = bien.categorie === 'location' && bien.type_location === 'courte_duree'
+
+  useEffect(() => { setMounted(true) }, [])
 
   // Incrémenter les vues côté client (évite le cache ISR du server component)
   useEffect(() => {
@@ -218,16 +221,19 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                       )}
                     </p>
                   </div>
-                  {/* Bouton disponibilité — connecté + courte durée uniquement */}
-                  {isCourte && user && user.id !== bien.owner_id && (
+                </div>
+
+                {/* Bouton disponibilités — visible uniquement aux utilisateurs connectés */}
+                {isCourte && mounted && user && (
+                  <div className="mt-3">
                     <button
                       onClick={() => setShowDispo(true)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-primary-500 border border-primary-200 bg-primary-50 px-3 py-2 rounded-xl hover:bg-primary-100 transition-colors min-h-[36px]"
+                      className="flex items-center gap-2 text-sm font-semibold text-primary-600 border-2 border-primary-200 bg-primary-50 px-4 py-2.5 rounded-xl hover:bg-primary-100 hover:border-primary-400 transition-all min-h-[44px]"
                     >
-                      <Calendar size={13} /> Voir disponibilités
+                      <Calendar size={16} /> Vérifier les disponibilités
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Partage */}
                 <div className="flex items-center gap-2 flex-wrap mt-4">
