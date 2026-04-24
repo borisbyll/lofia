@@ -36,20 +36,19 @@ interface Props {
 }
 
 export default function BienDetailClient({ bien, avis, similaires }: Props) {
-  const { user } = useAuthStore()
+  const { user, loading: authLoading } = useAuthStore()
 
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
   const [showDispo, setShowDispo] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [vues, setVues] = useState(bien.vues ?? 0)
 
   const isCourte = bien.categorie === 'location' && bien.type_location === 'courte_duree'
 
-  useEffect(() => { setMounted(true) }, [])
-
-  // Incrémenter les vues côté client (évite le cache ISR du server component)
+  // Incrémenter les vues côté client + mettre à jour l'affichage immédiatement
   useEffect(() => {
-    supabase.rpc('increment_vues', { p_bien_id: bien.id }).then(() => {})
+    setVues(v => v + 1)
+    supabase.rpc('increment_vues', { p_bien_id: bien.id })
   }, [bien.id])
 
   const photos = useMemo(
@@ -197,7 +196,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 mb-2 sm:mb-3 leading-tight">{bien.titre}</h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
                   <div className="flex items-center gap-1"><MapPin size={13} /><span className="truncate max-w-[200px]">{[bien.quartier, bien.ville].filter(Boolean).join(', ')}</span></div>
-                  {bien.vues > 0 && <div className="flex items-center gap-1"><Eye size={13} />{bien.vues} vues</div>}
+                  {vues > 0 && <div className="flex items-center gap-1"><Eye size={13} />{vues} vues</div>}
                   {notesMoyenne && (
                     <div className="flex items-center gap-1 text-amber-500 font-semibold">
                       <Star size={13} fill="currentColor" />{notesMoyenne.toFixed(1)} ({avis.length})
@@ -224,7 +223,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
                 </div>
 
                 {/* Bouton disponibilités — visible uniquement aux utilisateurs connectés */}
-                {isCourte && mounted && user && (
+                {isCourte && !authLoading && user && (
                   <div className="mt-3">
                     <button
                       onClick={() => setShowDispo(true)}
