@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
 import BienDetailClient from './BienDetailClient'
 import type { Bien } from '@/types/immobilier'
 import { BRAND } from '@/lib/brand'
@@ -70,16 +69,6 @@ export default async function BienDetailPage({ params }: Props) {
   if (!bien) notFound()
 
   const supabase = await createClient()
-
-  // Incrémenter les vues (fire-and-forget)
-  const today = new Date().toISOString().split('T')[0]
-  void Promise.all([
-    supabaseAdmin.rpc('increment_vues', { bien_id_param: bien.id }),
-    supabaseAdmin.from('stats_biens').upsert(
-      { bien_id: bien.id, date: today, nombre_vues: 1, nombre_clics_contact: 0 },
-      { onConflict: 'bien_id,date', ignoreDuplicates: false }
-    ),
-  ]).catch(() => {})
 
   // Avis + similaires en parallèle
   const [{ data: avis }, { data: similaires }] = await Promise.all([

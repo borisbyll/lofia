@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -39,6 +39,13 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
 
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
+
+  const isCourte = bien.categorie === 'location' && bien.type_location === 'courte_duree'
+
+  // Incrémenter les vues côté client (évite le cache ISR du server component)
+  useEffect(() => {
+    supabase.rpc('increment_vues', { p_bien_id: bien.id }).then(() => {})
+  }, [bien.id])
 
   const photos = useMemo(
     () => [bien.photo_principale, ...(bien.photos || [])].filter(Boolean) as string[],
@@ -275,7 +282,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
 
               {/* Propriétaire (mobile - card) */}
               <div className="lg:hidden bg-white border border-gray-100 rounded-2xl p-5">
-                <PropriétaireCard bien={bien} onContact={handleContact} />
+                <PropriétaireCard bien={bien} onContact={handleContact} showContact={isCourte} />
               </div>
 
               {/* Panneau d'action mobile selon type */}
@@ -355,7 +362,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
             <div className="hidden lg:block">
               <div className="sticky top-24 space-y-4">
                 <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                  <PropriétaireCard bien={bien} onContact={handleContact} />
+                  <PropriétaireCard bien={bien} onContact={handleContact} showContact={isCourte} />
                 </div>
                 {bien.categorie === 'location' && bien.type_location === 'courte_duree' && (
                   <ReservationPanel bien={bien} />
@@ -372,27 +379,25 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
         </div>
       </div>
 
-      {/* Sticky mobile — Contacter + Réserver — au-dessus de la BottomNav */}
+      {/* Sticky mobile — au-dessus de la BottomNav */}
       <div className="lg:hidden fixed bottom-[68px] left-0 right-0 z-40 bg-white border-t border-gray-100 px-3 py-2.5 flex gap-2.5 shadow-[0_-4px_16px_rgba(0,0,0,.08)]">
-        <button onClick={handleContact} className="flex-1 btn btn-outline gap-1.5 text-sm px-3">
-          <MessageSquare size={15} /> Contacter
-        </button>
-        {bien.categorie === 'location' && bien.type_location === 'courte_duree' ? (
-          <Link href="#reserver" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
-            <Calendar size={15} /> Réserver
-          </Link>
-        ) : bien.categorie === 'location' && bien.type_location === 'longue_duree' ? (
-          <Link href="#demander-visite" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
+        {isCourte ? (
+          <>
+            <button onClick={handleContact} className="flex-1 btn btn-outline gap-1.5 text-sm px-3">
+              <MessageSquare size={15} /> Contacter
+            </button>
+            <Link href="#reserver" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
+              <Calendar size={15} /> Réserver
+            </Link>
+          </>
+        ) : bien.categorie === 'location' ? (
+          <Link href="#demander-visite" className="w-full btn btn-primary gap-1.5 text-sm justify-center">
             <Key size={15} /> Demander une visite
           </Link>
-        ) : bien.categorie === 'vente' ? (
-          <Link href="#demander-visite" className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
+        ) : (
+          <Link href="#demander-visite" className="w-full btn btn-primary gap-1.5 text-sm justify-center">
             <Building2 size={15} /> Demander une visite
           </Link>
-        ) : (
-          <button onClick={handleContact} className="flex-1 btn btn-primary gap-1.5 text-sm px-3">
-            <MessageSquare size={15} /> Envoyer message
-          </button>
         )}
       </div>
 
@@ -401,8 +406,8 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
   )
 }
 
-function PropriétaireCard({ bien, onContact }: {
-  bien: Bien; onContact: () => void
+function PropriétaireCard({ bien, onContact, showContact }: {
+  bien: Bien; onContact: () => void; showContact: boolean
 }) {
   return (
     <div>
@@ -421,11 +426,16 @@ function PropriétaireCard({ bien, onContact }: {
 
       {bien.proprietaire?.bio && <p className="text-sm text-gray-500 mb-4 line-clamp-3">{bien.proprietaire.bio}</p>}
 
-      <div className="space-y-2.5">
+      {showContact ? (
         <button onClick={onContact} className="btn btn-primary w-full justify-center gap-2">
           <MessageSquare size={16} /> Envoyer un message
         </button>
-      </div>
+      ) : (
+        <div className="flex items-center gap-2 bg-or-pale rounded-xl px-3 py-2.5 text-xs text-brun-doux">
+          <ShieldCheck size={13} className="text-primary-400 shrink-0" />
+          <span>Géré par <span className="font-semibold text-primary-600">LOFIA.</span> — un agent vous contactera après votre demande.</span>
+        </div>
+      )}
     </div>
   )
 }
