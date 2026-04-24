@@ -46,32 +46,35 @@ function ModeToggle({ mode, setMode }: { mode: DashboardMode; setMode: (m: Dashb
 
 /* ── Nav items par mode ──────────────────────────────────────── */
 const navProprietaire = [
-  { href: '/mon-espace',                       label: 'Vue d\'ensemble',    icon: LayoutDashboard },
-  { href: '/mon-espace/mes-biens',             label: 'Mes annonces',       icon: Home },
-  { href: '/mon-espace/reservations',          label: 'Réservations',       icon: CalendarCheck },
-  { href: '/mon-espace/mises-en-relation',     label: 'Visites location',   icon: Users },
-  { href: '/mon-espace/contrats',              label: 'Contrats',           icon: FileText },
-  { href: '/mon-espace/ventes',                label: 'Ventes',             icon: Building2 },
-  { href: '/mon-espace/messagerie',            label: 'Conversations',      icon: MessageCircle },
-  { href: '/mon-espace/notifications',         label: 'Notifications',      icon: Bell },
-  { href: '/mon-espace/profil',                label: 'Mon profil',         icon: User },
+  { href: '/mon-espace',                   label: 'Vue d\'ensemble',    icon: LayoutDashboard },
+  { href: '/mon-espace/mes-biens',         label: 'Mes annonces',       icon: Home },
+  { href: '/mon-espace/reservations',      label: 'Réservations',       icon: CalendarCheck },
+  { href: '/mon-espace/locations',         label: 'Locations LD',       icon: Users },
+  { href: '/mon-espace/contrats',          label: 'Contrats',           icon: FileText },
+  { href: '/mon-espace/ventes',            label: 'Ventes',             icon: Building2 },
+  { href: '/mon-espace/messagerie',        label: 'Conversations',      icon: MessageCircle },
+  { href: '/mon-espace/notifications',     label: 'Notifications',      icon: Bell },
+  { href: '/mon-espace/profil',            label: 'Mon profil',         icon: User },
 ]
 
 const navLocataire = [
-  { href: '/mon-espace',                       label: 'Vue d\'ensemble',    icon: LayoutDashboard },
-  { href: '/mon-espace/reservations',          label: 'Réservations',       icon: CalendarCheck },
-  { href: '/mon-espace/mises-en-relation',     label: 'Visites location',   icon: Users },
-  { href: '/mon-espace/contrats',              label: 'Contrats',           icon: FileText },
-  { href: '/mon-espace/ventes',                label: 'Ventes',             icon: Building2 },
-  { href: '/mon-espace/favoris',               label: 'Favoris',            icon: Heart },
-  { href: '/mon-espace/messagerie',            label: 'Conversations',      icon: MessageCircle },
-  { href: '/mon-espace/notifications',         label: 'Notifications',      icon: Bell },
-  { href: '/mon-espace/profil',                label: 'Mon profil',         icon: User },
+  { href: '/mon-espace',                   label: 'Vue d\'ensemble',    icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',      label: 'Réservations',       icon: CalendarCheck },
+  { href: '/mon-espace/locations',         label: 'Locations LD',       icon: Users },
+  { href: '/mon-espace/contrats',          label: 'Contrats',           icon: FileText },
+  { href: '/mon-espace/ventes',            label: 'Ventes',             icon: Building2 },
+  { href: '/mon-espace/favoris',           label: 'Favoris',            icon: Heart },
+  { href: '/mon-espace/messagerie',        label: 'Conversations',      icon: MessageCircle },
+  { href: '/mon-espace/notifications',     label: 'Notifications',      icon: Bell },
+  { href: '/mon-espace/profil',            label: 'Mon profil',         icon: User },
 ]
 
 const modItems = [
-  { href: '/moderateur',               label: 'Dashboard modérateur', icon: Shield },
-  { href: '/moderateur/signalements',  label: 'Signalements',         icon: Settings },
+  { href: '/moderateur',                              label: 'Dashboard',          icon: Shield },
+  { href: '/moderateur/annonces-vente',               label: 'Annonces vente',     icon: Building2 },
+  { href: '/moderateur/dossiers/longue-duree',        label: 'Dossiers location',  icon: Users },
+  { href: '/moderateur/dossiers/vente',               label: 'Dossiers vente',     icon: Home },
+  { href: '/moderateur/signalements',                 label: 'Signalements',       icon: Settings },
 ]
 
 const adminItems = [
@@ -87,16 +90,16 @@ const bottomProprietaire = [
   { href: '/mon-espace',                   label: 'Vue d\'ensemble', icon: LayoutDashboard },
   { href: '/mon-espace/mes-biens',         label: 'Annonces',        icon: Building2 },
   { href: '/mon-espace/publier',           label: 'Publier',         icon: Plus, accent: true },
-  { href: '/mon-espace/mises-en-relation', label: 'Visites',         icon: Users },
-  { href: '/mon-espace/ventes',            label: 'Ventes',          icon: Home },
+  { href: '/mon-espace/locations', label: 'Locations',       icon: Users },
+  { href: '/mon-espace/ventes',    label: 'Ventes',          icon: Home },
 ]
 
 const bottomLocataire = [
-  { href: '/mon-espace',                   label: 'Vue d\'ensemble', icon: LayoutDashboard },
-  { href: '/mon-espace/reservations',      label: 'Réservations',    icon: CalendarCheck },
-  { href: '/mon-espace/publier',           label: 'Publier',         icon: Plus, accent: true },
-  { href: '/mon-espace/mises-en-relation', label: 'Visites',         icon: Users },
-  { href: '/mon-espace/ventes',            label: 'Ventes',          icon: Home },
+  { href: '/mon-espace',                label: 'Vue d\'ensemble', icon: LayoutDashboard },
+  { href: '/mon-espace/reservations',   label: 'Réservations',    icon: CalendarCheck },
+  { href: '/mon-espace/publier',        label: 'Publier',         icon: Plus, accent: true },
+  { href: '/mon-espace/locations',      label: 'Locations',       icon: Users },
+  { href: '/mon-espace/ventes',         label: 'Ventes',          icon: Home },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
