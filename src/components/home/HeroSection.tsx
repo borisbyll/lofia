@@ -15,8 +15,8 @@ export default function HeroSection() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    const dest = tab === 'vente' ? '/vente' : tab === 'location' ? '/location' : '/vente'
-    router.push(`${dest}?q=${encodeURIComponent(query)}`)
+    const dest = tab === 'vente' ? '/vente' : tab === 'location' ? '/location' : '/recherche'
+    router.push(`${dest}?q=${encodeURIComponent(query)}${tab !== 'tous' ? `&categorie=${tab}` : ''}`)
   }
 
   const handleGeo = () => {
@@ -24,7 +24,7 @@ export default function HeroSection() {
   }
 
   const tabs: { key: Tab; label: string; href: string }[] = [
-    { key: 'tous',     label: 'Tous',     href: '/vente' },
+    { key: 'tous',     label: 'Tous',     href: '/recherche' },
     { key: 'vente',    label: 'Vente',    href: '/vente' },
     { key: 'location', label: 'Location', href: '/location' },
   ]
