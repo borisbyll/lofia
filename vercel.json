@@ -4,7 +4,7 @@
     { "path": "/api/cron/rappels-sponsoring",            "schedule": "0 9 * * *" },
     { "path": "/api/cron/passer-reservations",           "schedule": "0 3 * * *" },
     { "path": "/api/cron/expirer-demandes",              "schedule": "0 2 * * *" },
-    { "path": "/api/cron/expirer-liens-paiement",        "schedule": "0 * * * *" },
+    { "path": "/api/cron/expirer-liens-paiement",        "schedule": "0 7 * * *" },
     { "path": "/api/cron/rappels-demandes-attente",      "schedule": "0 11 * * *" },
     { "path": "/api/cron/rappels-avant-arrivee",         "schedule": "0 9 * * *" },
     { "path": "/api/cron/detecter-no-shows",             "schedule": "0 5 * * *" },
