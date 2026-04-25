@@ -24,6 +24,7 @@ export default function ProfilPage() {
   const [cniVersoUrl, setCniVersoUrl] = useState<string | null>(null)
   const [niveauLocataire, setNiveauLocataire] = useState<NiveauLocataire | null>(null)
   const [resasHonorees, setResasHonorees] = useState(0)
+  const [noteMoyenne, setNoteMoyenne] = useState<number | null>(null)
 
   const avatarRef = useRef<HTMLInputElement>(null)
   const cniRectoRef = useRef<HTMLInputElement>(null)
@@ -98,18 +99,30 @@ export default function ProfilPage() {
     }
   }
 
-  // Charger le niveau locataire
+  // CDC : utiliser la VIEW mon_niveau_locataire (expose niveau sans score chiffré)
   useEffect(() => {
     if (!user) return
     supabase
-      .from('scores_locataires')
+      .from('mon_niveau_locataire')
       .select('niveau, reservations_honorees')
-      .eq('locataire_id', user.id)
       .single()
       .then(({ data }) => {
         if (data) {
           setNiveauLocataire(data.niveau as NiveauLocataire)
           setResasHonorees(data.reservations_honorees ?? 0)
+        }
+      })
+
+    // CDC : note moyenne reçue des propriétaires
+    supabase
+      .from('avis')
+      .select('note')
+      .eq('sujet_id', user.id)
+      .eq('type', 'proprio_note_locataire')
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const moy = data.reduce((sum, a) => sum + a.note, 0) / data.length
+          setNoteMoyenne(Math.round(moy * 10) / 10)
         }
       })
   }, [user])
@@ -163,11 +176,17 @@ export default function ProfilPage() {
             <h2 className="font-bold text-gray-900 text-sm">Mon historique locataire</h2>
             <BadgeNiveauLocataire niveau={niveauLocataire} />
           </div>
-          <div className="flex items-center gap-4 text-sm text-brun-doux">
+          <div className="flex items-center gap-4 text-sm text-brun-doux flex-wrap">
             <div className="flex items-center gap-1.5">
               <Star size={14} className="text-accent-500 fill-current" />
               <span><strong className="text-brun-nuit">{resasHonorees}</strong> séjour{resasHonorees > 1 ? 's' : ''} effectué{resasHonorees > 1 ? 's' : ''}</span>
             </div>
+            {noteMoyenne !== null && (
+              <div className="flex items-center gap-1.5">
+                <Star size={14} className="text-accent-500 fill-current" />
+                <span>Note moyenne reçue des propriétaires : <strong className="text-brun-nuit">{noteMoyenne}/5</strong></span>
+              </div>
+            )}
           </div>
           {niveauLocataire === 'platine' && (
             <p className="text-xs text-accent-700 mt-2 bg-accent-50 rounded-lg p-2">

@@ -40,16 +40,34 @@ export async function POST(request: Request, { params }: { params: { id: string 
       })
       .eq('id', params.id)
 
-    // Bonus si arrivée avant l'heure prévue
+    // CDC : +2 points si arrivée avant l'heure prévue (PAS +10 — le +10 est au fin du séjour)
     if (isLocataire && resa.heure_arrivee_prevue && resa.date_debut) {
-      const dateArriveePrevu = new Date(`${resa.date_debut}T${resa.heure_arrivee_prevue}`)
-      if (maintenant < dateArriveePrevu) {
-        await appliquerEvenementScore(
-          resa.locataire_id,
-          'reservation_honoree',
-          params.id,
-          'Arrivée confirmée avant l\'heure prévue (+2 pts bonus inclus)'
-        ).catch(err => console.error('[score arrivee]', err))
+      const dateArriveePrevue = new Date(`${resa.date_debut}T${resa.heure_arrivee_prevue}`)
+      if (maintenant < dateArriveePrevue) {
+        // Applique +2 directement sans passer par un évènement nommé
+        const { data: scoreData } = await supabaseAdmin
+          .from('scores_locataires')
+          .select('score')
+          .eq('locataire_id', resa.locataire_id)
+          .single()
+
+        if (scoreData) {
+          const nouveau_score = Math.min(150, scoreData.score + 2)
+          await supabaseAdmin
+            .from('scores_locataires')
+            .update({ score: nouveau_score })
+            .eq('locataire_id', resa.locataire_id)
+
+          await supabaseAdmin.from('historique_score_locataire').insert({
+            locataire_id: resa.locataire_id,
+            evenement: 'reservation_honoree',
+            variation: 2,
+            score_avant: scoreData.score,
+            score_apres: nouveau_score,
+            reservation_id: params.id,
+            notes: 'Arrivée confirmée avant l\'heure prévue (+2 pts)',
+          })
+        }
       }
     }
 

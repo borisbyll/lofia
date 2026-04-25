@@ -26,37 +26,29 @@ export default function AvisModal({ reservationId, bienId, bienTitre, proprietai
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user)        { toast.error('Vous devez être connecté'); return }
-    if (note === 0)   { toast.error('Choisissez une note'); return }
+    if (!user)      { toast.error('Vous devez être connecté'); return }
+    if (note === 0) { toast.error('Choisissez une note'); return }
 
     setLoading(true)
     try {
-      const { error } = await supabase.from('avis').insert({
-        reservation_id:  reservationId,
-        bien_id:         bienId,
-        auteur_id:       user.id,
-        proprietaire_id: proprietaireId,
-        sujet_id:        proprietaireId,
-        type:            'locataire_note_proprio',
-        note,
-        commentaire:     commentaire.trim() || null,
+      const res = await fetch('/api/avis/soumettre', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservation_id:  reservationId,
+          bien_id:         bienId,
+          proprietaire_id: proprietaireId,
+          bien_titre:      bienTitre,
+          note,
+          commentaire:     commentaire.trim() || null,
+          type:            'locataire_note_proprio',
+        }),
       })
-
-      if (error) {
-        if (error.code === '23505') toast.error('Vous avez déjà laissé un avis pour cette réservation')
-        else throw error
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? 'Erreur lors de la publication')
         return
       }
-
-      // Notifier le propriétaire de l'avis reçu
-      await supabase.from('notifications').insert({
-        user_id: proprietaireId,
-        type:    'avis_nouveau',
-        titre:   '⭐ Nouvel avis reçu',
-        corps:   `Vous avez reçu un avis de ${note} étoile${note > 1 ? 's' : ''} pour "${bienTitre}".`,
-        lien:    '/mon-espace',
-      })
-
       toast.success('Avis publié, merci !')
       onSuccess()
       onClose()
