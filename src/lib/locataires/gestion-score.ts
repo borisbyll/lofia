@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 export type EvenementScore =
   | 'reservation_honoree'
   | 'annulation_retractation'
+  | 'annulation_avant_confirmation'
   | 'annulation_72h'
   | 'annulation_24_72h'
   | 'annulation_moins_24h'
@@ -12,6 +13,8 @@ export type EvenementScore =
   | 'avis_positif'
   | 'avis_negatif'
   | 'degradation'
+  | 'comportement_irrespectueux'
+  | 'fausse_declaration_fm'
   | 'recuperation_naturelle'
   | 'bonus_consecutif'
 
@@ -27,6 +30,7 @@ export type NiveauLocataire =
 const VARIATIONS: Record<EvenementScore, number> = {
   reservation_honoree: 10,
   annulation_retractation: 0,
+  annulation_avant_confirmation: 0,  // CDC: pas de pénalité avant confirmation proprio
   annulation_72h: -5,
   annulation_24_72h: -15,
   annulation_moins_24h: -25,
@@ -36,6 +40,8 @@ const VARIATIONS: Record<EvenementScore, number> = {
   avis_positif: 5,
   avis_negatif: -10,
   degradation: -30,
+  comportement_irrespectueux: -20,   // CDC v2 §5.2
+  fausse_declaration_fm: -50,        // CDC v2 §5.2
   recuperation_naturelle: 0,
   bonus_consecutif: 15,
 }
@@ -85,9 +91,9 @@ export async function appliquerEvenementScore(
   const updates: Record<string, number | boolean | string | null> = {}
 
   if (evenement === 'reservation_honoree') {
-    updates.reservations_honorees = (scoreData.reservations_honorees ?? 0) + 1
+    updates.sejours_honores = (scoreData.sejours_honores ?? 0) + 1
     // Bonus 3 réservations consécutives
-    const nouvellesHonor = (scoreData.reservations_honorees ?? 0) + 1
+    const nouvellesHonor = (scoreData.sejours_honores ?? 0) + 1
     if (nouvellesHonor > 0 && nouvellesHonor % 3 === 0) {
       score_apres = Math.min(SCORE_MAX, score_apres + VARIATIONS.bonus_consecutif)
       await supabaseAdmin.from('historique_score_locataire').insert({

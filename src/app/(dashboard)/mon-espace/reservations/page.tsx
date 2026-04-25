@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   CalendarCheck, CheckCircle, Clock, XCircle,
   Home, Loader2, Lock, Unlock, MapPin, User, Star,
+  CreditCard, AlertTriangle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
@@ -13,6 +14,7 @@ import { useDashboardMode } from '@/store/dashboardModeStore'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import AvisModal from '@/components/ui/AvisModal'
+import TimerExpiration from '@/components/locataires/TimerExpiration'
 
 interface Reservation {
   id: string
@@ -351,6 +353,71 @@ function SectionReservations({
   )
 }
 
+/* ── Carte demande CDC v2 §6.1 ───────────────────────────────── */
+interface Demande {
+  id: string
+  statut: string
+  date_arrivee: string
+  date_depart: string
+  nb_nuits: number
+  montant_total: number
+  expire_at: string
+  lien_paiement_expire_at?: string | null
+  tentatives_paiement?: number
+  biens?: any
+}
+
+function DemandeCard({ d }: { d: Demande }) {
+  const bien = Array.isArray(d.biens) ? d.biens[0] : d.biens
+  return (
+    <div className="bg-white rounded-2xl border border-primary-50 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-4 p-4 border-b border-primary-50">
+        <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
+          {bien?.photos?.[0]
+            ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center"><Home size={18} style={{ color: '#E8909F' }} /></div>
+          }
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm truncate text-brun-nuit">{bien?.titre ?? '—'}</p>
+          <p className="text-xs text-brun-doux mt-0.5">{formatDate(d.date_arrivee)} → {formatDate(d.date_depart)} — {d.nb_nuits} nuit{d.nb_nuits > 1 ? 's' : ''}</p>
+          <p className="font-black text-primary-500 text-sm mt-0.5">{formatPrix(d.montant_total)}</p>
+        </div>
+        <span className={cn('badge text-xs shrink-0', d.statut === 'en_attente' ? 'badge-warning' : d.statut === 'confirmee' ? 'badge-success' : 'badge-gray')}>
+          {d.statut === 'en_attente' ? '⏳ En attente' : d.statut === 'confirmee' ? '✅ Confirmée' : d.statut}
+        </span>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {d.statut === 'en_attente' && (
+          <TimerExpiration expire_at={d.expire_at} label="Expire dans" />
+        )}
+        {d.statut === 'confirmee' && d.lien_paiement_expire_at && (
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle size={14} className="text-amber-500" />
+              <TimerExpiration expire_at={d.lien_paiement_expire_at} label="Paiement expire dans" />
+            </div>
+            <Link href={`/reservations/payer/${d.id}`} className="btn btn-primary text-sm px-4 py-2 gap-1.5">
+              <CreditCard size={13} /> Payer maintenant
+            </Link>
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <Link href={`/reservations/demandes/${d.id}`} className="text-xs text-primary-500 hover:underline font-semibold">
+            Voir le détail →
+          </Link>
+          {['en_attente', 'confirmee'].includes(d.statut) && (
+            <Link href={`/reservations/demandes/${d.id}`} className="text-xs text-red-400 hover:text-red-600 transition-colors">
+              Annuler
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ══════════════════════════════════════════════════════════════
    PAGE PRINCIPALE
 ══════════════════════════════════════════════════════════════ */
@@ -359,9 +426,11 @@ export default function ReservationsPage() {
   const { mode }      = useDashboardMode()
   const [resasProp, setResasProp] = useState<Reservation[]>([])
   const [resasLoc,  setResasLoc]  = useState<Reservation[]>([])
+  const [demandes,  setDemandes]  = useState<Demande[]>([])
   const [loading,   setLoading]   = useState(true)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [avisTarget, setAvisTarget] = useState<AvisTarget | null>(null)
+  const [tabLoc, setTabLoc] = useState<'demandes' | 'avenir' | 'passes' | 'annulations'>('demandes')
 
   useEffect(() => {
     if (!user) return
@@ -378,7 +447,7 @@ export default function ReservationsPage() {
       locataire:profiles!locataire_id(nom),
       proprietaire:profiles!proprietaire_id(nom)
     `
-    const [resProp, resLoc] = await Promise.all([
+    const [resProp, resLoc, resDem] = await Promise.all([
       supabase.from('reservations').select(baseSelect)
         .eq('proprietaire_id', user!.id)
         .order('created_at', { ascending: false })
@@ -388,12 +457,18 @@ export default function ReservationsPage() {
         .neq('proprietaire_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(50),
+      supabase.from('demandes_reservation')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, tentatives_paiement, biens(id, titre, photos, photo_principale, ville)')
+        .eq('locataire_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(30),
     ])
 
     if (resProp.error || resLoc.error) toast.error('Erreur de chargement')
 
     setResasProp(((resProp.data ?? []) as unknown as Reservation[]).map(normaliser))
     setResasLoc(((resLoc.data ?? []) as unknown as Reservation[]).map(normaliser))
+    setDemandes((resDem.data ?? []) as unknown as Demande[])
     setLoading(false)
   }
 
@@ -420,15 +495,26 @@ export default function ReservationsPage() {
 
   const isProprio = mode === 'proprietaire'
 
+  // Ventilation des réservations locataire dans les 4 onglets CDC v2 §6.1
+  const demandesActives = demandes.filter(d => ['en_attente', 'confirmee'].includes(d.statut))
+  const resasAvenir = resasLoc.filter(r => ['confirme', 'en_cours', 'en_sejour'].includes(r.statut) && r.date_debut >= today)
+  const resasPassees = resasLoc.filter(r => r.statut === 'termine')
+  const resasAnnulees = resasLoc.filter(r => ['annule', 'no_show'].includes(r.statut))
+  const demandesInactives = demandes.filter(d => ['refusee', 'expiree', 'annulee_locataire', 'annulee_systeme'].includes(d.statut))
+
+  const LOC_TABS = [
+    { key: 'demandes',    label: 'Demandes en cours', count: demandesActives.length },
+    { key: 'avenir',      label: 'À venir',           count: resasAvenir.length },
+    { key: 'passes',      label: 'Séjours passés',    count: resasPassees.length },
+    { key: 'annulations', label: 'Annulations',        count: resasAnnulees.length + demandesInactives.length },
+  ] as const
+
   return (
     <div className="p-4 lg:p-8 max-w-4xl mx-auto w-full space-y-6 pb-24 lg:pb-8">
 
-      {/* Titre avec couleur selon le mode */}
+      {/* Titre */}
       <div className="flex items-center gap-3">
-        <span
-          className="w-1 h-7 rounded-full shrink-0"
-          style={{ background: isProprio ? '#8B1A2E' : '#2D6A4F' }}
-        />
+        <span className="w-1 h-7 rounded-full shrink-0" style={{ background: isProprio ? '#8B1A2E' : '#2D6A4F' }} />
         <div>
           <h1 className="text-2xl font-black" style={{ color: '#1a0a00' }}>Réservations</h1>
           <p className="text-xs mt-0.5" style={{ color: isProprio ? '#8B1A2E' : '#2D6A4F' }}>
@@ -445,14 +531,106 @@ export default function ReservationsPage() {
           loadingId={loadingId}
         />
       ) : (
-        <SectionReservations
-          titre="Mes réservations"
-          resas={resasLoc}
-          vue="locataire"
-          onConfirmerArrivee={confirmerArrivee}
-          loadingId={loadingId}
-          onOpenAvis={setAvisTarget}
-        />
+        <>
+          {/* 4 onglets CDC v2 */}
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
+            {LOC_TABS.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setTabLoc(t.key)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-1 justify-center',
+                  tabLoc === t.key ? 'text-white' : 'text-brun-doux hover:bg-primary-50'
+                )}
+                style={tabLoc === t.key ? { background: '#8B1A2E' } : {}}
+              >
+                {t.label}
+                {t.count > 0 && (
+                  <span className={cn('px-1.5 py-0 rounded-full text-[10px] font-bold', tabLoc === t.key ? 'bg-white/30 text-white' : 'bg-primary-50 text-primary-600')}>
+                    {t.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Onglet Demandes en cours */}
+          {tabLoc === 'demandes' && (
+            <div className="space-y-4">
+              {demandesActives.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+                  <Clock size={36} className="mx-auto mb-3 opacity-20 text-primary-300" />
+                  <p className="text-sm text-brun-doux">Aucune demande en cours</p>
+                  <Link href="/location" className="inline-block mt-3 text-xs font-bold text-primary-500 hover:underline">Explorer les locations →</Link>
+                </div>
+              ) : (
+                demandesActives.map(d => <DemandeCard key={d.id} d={d} />)
+              )}
+            </div>
+          )}
+
+          {/* Onglet À venir */}
+          {tabLoc === 'avenir' && (
+            <div className="space-y-4">
+              {resasAvenir.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+                  <CalendarCheck size={36} className="mx-auto mb-3 opacity-20 text-primary-300" />
+                  <p className="text-sm text-brun-doux">Aucune réservation à venir</p>
+                </div>
+              ) : (
+                resasAvenir.map(r => (
+                  <ResaCard key={r.id} r={r} vue="locataire" onConfirmerArrivee={confirmerArrivee} loadingId={loadingId} onOpenAvis={setAvisTarget} />
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Onglet Séjours passés */}
+          {tabLoc === 'passes' && (
+            <div className="space-y-4">
+              {resasPassees.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+                  <Home size={36} className="mx-auto mb-3 opacity-20 text-primary-300" />
+                  <p className="text-sm text-brun-doux">Aucun séjour passé</p>
+                </div>
+              ) : (
+                resasPassees.map(r => (
+                  <ResaCard key={r.id} r={r} vue="locataire" loadingId={loadingId} onOpenAvis={setAvisTarget} />
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Onglet Annulations */}
+          {tabLoc === 'annulations' && (
+            <div className="space-y-4">
+              {resasAnnulees.length === 0 && demandesInactives.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+                  <XCircle size={36} className="mx-auto mb-3 opacity-20 text-primary-300" />
+                  <p className="text-sm text-brun-doux">Aucune annulation</p>
+                </div>
+              ) : (
+                <>
+                  {resasAnnulees.map(r => (
+                    <ResaCard key={r.id} r={r} vue="locataire" loadingId={loadingId} />
+                  ))}
+                  {demandesInactives.map(d => (
+                    <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-bold text-sm text-brun-nuit">{(Array.isArray(d.biens) ? d.biens[0] : d.biens)?.titre ?? '—'}</p>
+                          <p className="text-xs text-brun-doux mt-0.5">{formatDate(d.date_arrivee)} → {formatDate(d.date_depart)}</p>
+                          <p className="text-xs text-gray-400 mt-1">{d.statut === 'refusee' ? '❌ Refusée' : d.statut === 'expiree' ? '⏰ Expirée' : '🚫 Annulée'}</p>
+                        </div>
+                        <p className="font-black text-primary-500 text-sm shrink-0">{formatPrix(d.montant_total)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {avisTarget && (

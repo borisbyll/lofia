@@ -99,17 +99,17 @@ export default function ProfilPage() {
     }
   }
 
-  // CDC : utiliser la VIEW mon_niveau_locataire (expose niveau sans score chiffré)
+  // CDC v2 : utiliser la VIEW mon_profil_locataire (expose niveau sans score chiffré)
   useEffect(() => {
     if (!user) return
     supabase
-      .from('mon_niveau_locataire')
-      .select('niveau, reservations_honorees')
+      .from('mon_profil_locataire')
+      .select('niveau, sejours_honores')
       .single()
       .then(({ data }) => {
         if (data) {
           setNiveauLocataire(data.niveau as NiveauLocataire)
-          setResasHonorees(data.reservations_honorees ?? 0)
+          setResasHonorees(data.sejours_honores ?? 0)
         }
       })
 

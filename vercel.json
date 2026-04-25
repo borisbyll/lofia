@@ -2,13 +2,16 @@
   "crons": [
     { "path": "/api/cron/expirer-sponsorisations",       "schedule": "0 1 * * *" },
     { "path": "/api/cron/rappels-sponsoring",            "schedule": "0 9 * * *" },
-    { "path": "/api/cron/passer-reservations-en-cours",  "schedule": "0 3 * * *" },
+    { "path": "/api/cron/passer-reservations",           "schedule": "0 3 * * *" },
+    { "path": "/api/cron/expirer-demandes",              "schedule": "0 2 * * *" },
+    { "path": "/api/cron/expirer-liens-paiement",        "schedule": "0 * * * *" },
+    { "path": "/api/cron/rappels-demandes-attente",      "schedule": "0 11 * * *" },
+    { "path": "/api/cron/rappels-avant-arrivee",         "schedule": "0 9 * * *" },
+    { "path": "/api/cron/detecter-no-shows",             "schedule": "0 5 * * *" },
+    { "path": "/api/cron/confirmer-no-shows",            "schedule": "0 6 * * *" },
+    { "path": "/api/cron/rappels-avis",                  "schedule": "0 14 * * *" },
     { "path": "/api/cron/declencher-virements",          "schedule": "0 8 * * *" },
-    { "path": "/api/cron/envoyer-demandes-avis",         "schedule": "0 10 * * *" },
-    { "path": "/api/cron/expirer-tokens-decision",       "schedule": "0 2 * * *" },
-    { "path": "/api/cron/detecter-no-shows",            "schedule": "0 5 * * *" },
-    { "path": "/api/cron/confirmer-no-shows",           "schedule": "0 6 * * *" },
-    { "path": "/api/cron/recuperation-naturelle-scores","schedule": "0 3 * * *" },
-    { "path": "/api/cron/recalculer-niveaux-locataires","schedule": "0 4 * * *" }
+    { "path": "/api/cron/recuperation-naturelle-scores", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/recalculer-niveaux-locataires", "schedule": "0 4 * * *" }
   ]
 }

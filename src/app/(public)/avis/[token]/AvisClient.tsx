@@ -38,10 +38,18 @@ export default function AvisClient({ avis, token }: Props) {
   async function soumettre() {
     if (!note) return toast.error('Sélectionnez une note')
     setLoading(true)
-    const r = await fetch('/api/avis/soumettre', {
+    const r = await fetch('/api/avis/soumettre-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, note, commentaire }),
+      body: JSON.stringify({
+        token,
+        reservation_id: avis?.reservation_id,
+        bien_id:        avis?.bien_id,
+        proprietaire_id: avis?.proprietaire_id,
+        type:           avis?.type ?? 'locataire_note_proprio',
+        note,
+        commentaire,
+      }),
     })
     const d = await r.json()
     setLoading(false)
