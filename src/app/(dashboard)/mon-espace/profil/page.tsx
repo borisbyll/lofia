@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, Phone, Mail, Globe, Camera, Shield, CheckCircle, Loader2, Upload, LogOut } from 'lucide-react'
+import { User, Phone, Mail, Globe, Camera, Shield, CheckCircle, Loader2, Upload, LogOut, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
+import BadgeNiveauLocataire from '@/components/locataires/BadgeNiveauLocataire'
+import type { NiveauLocataire } from '@/lib/locataires/gestion-score'
 
 export default function ProfilPage() {
   const { user, profile, loadProfile, logout } = useAuthStore()
@@ -20,6 +22,8 @@ export default function ProfilPage() {
   const [cniUploading, setCniUploading] = useState(false)
   const [cniRectoUrl, setCniRectoUrl] = useState<string | null>(null)
   const [cniVersoUrl, setCniVersoUrl] = useState<string | null>(null)
+  const [niveauLocataire, setNiveauLocataire] = useState<NiveauLocataire | null>(null)
+  const [resasHonorees, setResasHonorees] = useState(0)
 
   const avatarRef = useRef<HTMLInputElement>(null)
   const cniRectoRef = useRef<HTMLInputElement>(null)
@@ -94,6 +98,22 @@ export default function ProfilPage() {
     }
   }
 
+  // Charger le niveau locataire
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('scores_locataires')
+      .select('niveau, reservations_honorees')
+      .eq('locataire_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setNiveauLocataire(data.niveau as NiveauLocataire)
+          setResasHonorees(data.reservations_honorees ?? 0)
+        }
+      })
+  }, [user])
+
   const identiteVerifiee = (profile as any)?.identite_verifiee ?? false
 
   return (
@@ -135,6 +155,37 @@ export default function ProfilPage() {
           </div>
         </div>
       </div>
+
+      {/* Section niveau locataire */}
+      {niveauLocataire && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-gray-900 text-sm">Mon historique locataire</h2>
+            <BadgeNiveauLocataire niveau={niveauLocataire} />
+          </div>
+          <div className="flex items-center gap-4 text-sm text-brun-doux">
+            <div className="flex items-center gap-1.5">
+              <Star size={14} className="text-accent-500 fill-current" />
+              <span><strong className="text-brun-nuit">{resasHonorees}</strong> séjour{resasHonorees > 1 ? 's' : ''} effectué{resasHonorees > 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          {niveauLocataire === 'platine' && (
+            <p className="text-xs text-accent-700 mt-2 bg-accent-50 rounded-lg p-2">
+              ⭐ Félicitations ! Votre badge &quot;Locataire de confiance&quot; est visible par les propriétaires.
+            </p>
+          )}
+          {(niveauLocataire === 'vigilance' || niveauLocataire === 'alerte') && (
+            <p className="text-xs text-amber-700 mt-2 bg-amber-50 rounded-lg p-2">
+              ⚠️ Votre profil est en cours de construction. Honorez vos prochaines réservations pour améliorer votre accès.
+            </p>
+          )}
+          {niveauLocataire === 'suspendu' && (
+            <p className="text-xs text-red-700 mt-2 bg-red-50 rounded-lg p-2">
+              Votre compte est temporairement suspendu. Contactez le support pour plus d&apos;informations.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Formulaire infos */}
       <form onSubmit={handleSave} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4 space-y-4">
