@@ -74,6 +74,7 @@ const modItems = [
   { href: '/moderateur/annonces-vente',               label: 'Annonces vente',     icon: Building2 },
   { href: '/moderateur/dossiers/longue-duree',        label: 'Dossiers location',  icon: Users },
   { href: '/moderateur/dossiers/vente',               label: 'Dossiers vente',     icon: Home },
+  { href: '/moderateur/force-majeure',                label: 'Force majeure',      icon: FileText },
   { href: '/moderateur/signalements',                 label: 'Signalements',       icon: Settings },
 ]
 
@@ -81,6 +82,7 @@ const adminItems = [
   { href: '/admin',               label: 'Dashboard admin',  icon: Shield },
   { href: '/admin/utilisateurs',  label: 'Utilisateurs',     icon: User },
   { href: '/admin/biens',         label: 'Tous les biens',   icon: Home },
+  { href: '/admin/locataires',    label: 'Scores locataires', icon: Users },
   { href: '/admin/signalements',  label: 'Signalements',     icon: Settings },
 ]
 

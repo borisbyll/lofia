@@ -197,6 +197,18 @@ function ResaCard({
         </div>
       )}
 
+      {/* Annuler (locataire, réservation active et payée) */}
+      {vue === 'locataire' && r.paiement_effectue && ['en_attente', 'confirme', 'en_sejour', 'en_cours'].includes(r.statut) && (
+        <div className="px-4 pb-3 flex gap-2">
+          <Link
+            href={`/mon-espace/reservations/${r.id}/annuler`}
+            className="text-xs text-red-500 hover:text-red-700 underline underline-offset-2 transition-colors"
+          >
+            Annuler cette réservation
+          </Link>
+        </div>
+      )}
+
       {/* Laisser un avis (locataire, terminé) */}
       {vue === 'locataire' && r.statut === 'termine' && bienData && r.proprietaire_id && onOpenAvis && (
         <div className="px-4 pb-4">
