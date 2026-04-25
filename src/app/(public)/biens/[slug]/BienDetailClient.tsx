@@ -49,6 +49,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
   useEffect(() => {
     setVues(v => v + 1)
     supabase.rpc('increment_vues', { p_bien_id: bien.id })
+      .then(({ error }) => { if (error) console.error('[vues]', error.message, error.code) })
   }, [bien.id])
 
   const photos = useMemo(
