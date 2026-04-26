@@ -53,21 +53,22 @@ export default function TrackerDemandeReservation({ demande, onStatutChange }: P
 
   // Supabase Realtime — mise à jour statut sans rechargement
   useEffect(() => {
-    const channel = supabase.channel(`demande-${demande.id}-${Date.now()}`)
-    channel.on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'demandes_reservation', filter: `id=eq.${demande.id}` },
-      payload => {
-        const nouveau = payload.new?.statut
-        if (nouveau && nouveau !== statut) {
-          setStatut(nouveau)
-          onStatutChange?.(nouveau)
+    const channel = supabase
+      .channel(`demande-${demande.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'demandes_reservation', filter: `id=eq.${demande.id}` },
+        payload => {
+          const nouveau = payload.new?.statut
+          if (nouveau && nouveau !== statut) {
+            setStatut(nouveau)
+            onStatutChange?.(nouveau)
+          }
         }
-      }
-    ).subscribe()
+      ).subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [demande.id, statut, onStatutChange])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demande.id])
 
   const expireMs = new Date(demande.expire_at).getTime() - now
   const paiementMs = demande.lien_paiement_expire_at

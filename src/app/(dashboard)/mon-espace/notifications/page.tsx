@@ -40,11 +40,11 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
     loadNotifs()
 
     const channel = supabase
-      .channel(`notifs-page-${user.id}-${Date.now()}`)
+      .channel(`notifs-page-${user.id}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'notifications',
         filter: `user_id=eq.${user.id}`,
@@ -54,7 +54,8 @@ export default function NotificationsPage() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [user])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const loadNotifs = async () => {
     if (!user) return

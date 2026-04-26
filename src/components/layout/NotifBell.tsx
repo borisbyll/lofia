@@ -15,18 +15,18 @@ export default function NotifBell() {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
     loadNotifs()
 
-    // Suffixe unique pour éviter de récupérer un canal déjà subscribed du registry
     const channel = supabase
-      .channel(`notifs-${user.id}-${Date.now()}`)
+      .channel(`notifs-${user.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
         payload => setNotifs(prev => [payload.new as Notification, ...prev].slice(0, 20)))
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [user])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
