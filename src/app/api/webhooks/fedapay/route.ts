@@ -145,6 +145,138 @@ async function handleSponsoring(transaction: any) {
   })
 }
 
+// ── Handler demande de réservation payée (CDC v2 §1.2) ───────────────
+async function handleDemandeReservation(transaction: any) {
+  const { demande_id, bien_id, locataire_id, proprietaire_id, date_arrivee, date_depart } = transaction.metadata ?? {}
+  if (!demande_id) return
+
+  // Récupérer la demande
+  const { data: demande } = await supabaseAdmin
+    .from('demandes_reservation')
+    .select('*, bien:biens(titre)')
+    .eq('id', demande_id)
+    .single()
+
+  if (!demande || demande.statut !== 'confirmee') return
+
+  const now = new Date().toISOString()
+
+  // Créer la réservation officielle
+  const commission     = Math.round(demande.montant_total * 0.09)
+  const montantProprio = demande.montant_total - commission
+
+  const { data: resa, error } = await supabaseAdmin.from('reservations').insert({
+    bien_id:          demande.bien_id,
+    locataire_id:     demande.locataire_id,
+    proprietaire_id:  demande.proprietaire_id,
+    date_debut:       demande.date_arrivee,
+    date_fin:         demande.date_depart,
+    nb_nuits:         demande.nb_nuits,
+    prix_nuit:        Math.round(demande.montant_total / demande.nb_nuits),
+    prix_total:       demande.montant_total,
+    commission,
+    montant_proprio:  montantProprio,
+    statut:           'confirme',
+    paiement_effectue: true,
+    fedapay_status:   'approved',
+    paiement_at:      now,
+  }).select('id').single()
+
+  if (error) { console.error('[webhook/demande] Erreur création réservation', error); return }
+
+  // Marquer demande comme payée
+  await supabaseAdmin.from('demandes_reservation')
+    .update({ statut: 'payee', updated_at: now })
+    .eq('id', demande_id)
+
+  // Bloquer les dates
+  await supabaseAdmin.from('disponibilites').insert({
+    bien_id:        demande.bien_id,
+    date_debut:     demande.date_arrivee,
+    date_fin:       demande.date_depart,
+    type:           'reserve',
+    reservation_id: resa.id,
+  })
+
+  const titreBien = (demande.bien as any)?.titre ?? 'ce bien'
+
+  // Notifications
+  await supabaseAdmin.from('notifications').insert([
+    {
+      user_id: demande.locataire_id,
+      type: 'paiement_confirme',
+      titre: '✅ Paiement confirmé — Réservation validée !',
+      corps: `Votre séjour à "${titreBien}" du ${formatDate(demande.date_arrivee)} au ${formatDate(demande.date_depart)} est confirmé. L'adresse exacte vous sera communiquée à l'approche de votre arrivée.`,
+      lien: `/mon-espace/reservations`,
+    },
+    {
+      user_id: demande.proprietaire_id,
+      type: 'nouvelle_reservation',
+      titre: '💰 Paiement reçu — Réservation confirmée',
+      corps: `La réservation de "${titreBien}" est confirmée et le paiement de ${formatPrix(montantProprio)} vous sera versé après le séjour.`,
+      lien: `/mon-espace/reservations`,
+    },
+  ])
+}
+
+// ── Handler réservation instantanée (CDC v2 §1.3) ────────────────────
+async function handleInstantanee(transaction: any) {
+  const { bien_id, locataire_id, proprietaire_id, date_arrivee, date_depart } = transaction.metadata ?? {}
+  if (!bien_id || !locataire_id) return
+
+  const { data: bien } = await supabaseAdmin.from('biens').select('prix, titre').eq('id', bien_id).single()
+  if (!bien) return
+
+  const d1 = new Date(date_arrivee)
+  const d2 = new Date(date_depart)
+  const nb_nuits = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000))
+  const montant_total  = bien.prix * nb_nuits
+  const commission     = Math.round(montant_total * 0.09)
+  const montantProprio = montant_total - commission
+  const now = new Date().toISOString()
+
+  const { data: resa, error } = await supabaseAdmin.from('reservations').insert({
+    bien_id,
+    locataire_id,
+    proprietaire_id,
+    date_debut:       date_arrivee,
+    date_fin:         date_depart,
+    nb_nuits,
+    prix_nuit:        bien.prix,
+    prix_total:       montant_total,
+    commission,
+    montant_proprio:  montantProprio,
+    statut:           'confirme',
+    paiement_effectue: true,
+    fedapay_status:   'approved',
+    paiement_at:      now,
+  }).select('id').single()
+
+  if (error) { console.error('[webhook/instantanee] Erreur création réservation', error); return }
+
+  await supabaseAdmin.from('disponibilites').insert({
+    bien_id, date_debut: date_arrivee, date_fin: date_depart,
+    type: 'reserve', reservation_id: resa.id,
+  })
+
+  await supabaseAdmin.from('notifications').insert([
+    {
+      user_id: locataire_id,
+      type: 'paiement_confirme',
+      titre: '⚡ Réservation instantanée confirmée !',
+      corps: `Votre séjour à "${bien.titre}" du ${formatDate(date_arrivee)} au ${formatDate(date_depart)} est confirmé.`,
+      lien: `/mon-espace/reservations`,
+    },
+    {
+      user_id: proprietaire_id,
+      type: 'nouvelle_reservation',
+      titre: '💰 Nouvelle réservation instantanée',
+      corps: `Une réservation pour "${bien.titre}" a été confirmée et payée.`,
+      lien: `/mon-espace/reservations`,
+    },
+  ])
+}
+
 // ── Handler commission vente ─────────────────────────────────────────
 async function handleCommissionVente(transaction: any) {
   const { promesse_id } = transaction.metadata ?? {}
@@ -179,10 +311,12 @@ export async function POST(request: Request) {
 
   try {
     switch (transactionType) {
-      case 'reservation_courte_duree':    await handleReservation(transaction);     break
-      case 'frais_dossier_longue_duree':  await handleFraisDossier(transaction);    break
-      case 'commission_vente':            await handleCommissionVente(transaction);  break
-      case 'sponsoring':                  await handleSponsoring(transaction);       break
+      case 'reservation_courte_duree':  await handleReservation(transaction);         break
+      case 'demande_courte_duree':      await handleDemandeReservation(transaction);  break
+      case 'instantanee':               await handleInstantanee(transaction);         break
+      case 'frais_dossier_longue_duree': await handleFraisDossier(transaction);      break
+      case 'commission_vente':          await handleCommissionVente(transaction);     break
+      case 'sponsoring':                await handleSponsoring(transaction);          break
       default:
         console.warn('[Webhook FedaPay] Type inconnu:', transactionType)
     }

@@ -89,13 +89,13 @@ export async function POST(request: Request) {
 
     if (demandeError) throw demandeError
 
-    // Notification in-app au propriétaire
+    // Notification in-app au propriétaire avec lien de décision tokenisé
     await supabaseAdmin.from('notifications').insert({
       user_id: bien.owner_id,
       type: 'demande_reservation',
-      titre: 'Nouvelle demande de réservation',
-      corps: `${session.user.email} souhaite réserver "${bien.titre}" du ${date_arrivee} au ${date_depart} (${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}).`,
-      lien: `/mon-espace/reservations`,
+      titre: '🏠 Nouvelle demande de réservation',
+      corps: `Une demande pour "${bien.titre}" (${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}) attend votre réponse. Vous avez 12h pour confirmer ou refuser.`,
+      lien: `/reservations/decision/${token_confirmation}`,
     })
 
     // Notification in-app au locataire

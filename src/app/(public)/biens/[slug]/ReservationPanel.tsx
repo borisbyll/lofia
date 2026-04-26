@@ -2,29 +2,30 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Loader2, AlertCircle, X } from 'lucide-react'
+import { Calendar, Loader2, Send, X, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatPrix } from '@/lib/utils'
-import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
 import type { Bien } from '@/types/immobilier'
 import CalendrierDisponibilite from '@/components/reservations/CalendrierDisponibilite'
 
 interface Props { bien: Bien }
-
 interface Selection { dateArrivee: string; dateDepart: string; nbNuits: number; total: number }
 
 export default function ReservationPanel({ bien }: Props) {
   const { user, loading: authLoading } = useAuthStore()
-  const router    = useRouter()
+  const router = useRouter()
   const [selection,    setSelection]    = useState<Selection | null>(null)
+  const [message,      setMessage]      = useState('')
   const [loading,      setLoading]      = useState(false)
+  const [showMsg,      setShowMsg]      = useState(false)
   const [showCalModal, setShowCalModal] = useState(false)
 
   const prixBase = selection ? bien.prix * selection.nbNuits : 0
-  const total    = prixBase  // CDC v2 §4.2 : locataire paie le prix affiché
+  const total    = prixBase
 
-  const handleReserver = async () => {
+  // CDC v2 §1.2 — Mode "Sur demande" : le proprio confirme avant tout paiement
+  const handleDemandeReservation = async () => {
     if (!user) {
       toast.error('Connectez-vous pour réserver')
       router.push(`/connexion?next=/biens/${bien.slug}`)
@@ -33,49 +34,30 @@ export default function ReservationPanel({ bien }: Props) {
     if (!selection) return
     setLoading(true)
     try {
-      // Vérifier la disponibilité côté serveur avant d'insérer
-      const checkRes = await fetch('/api/reservations/verifier-disponibilite', {
+      const res = await fetch('/api/reservations/creer-demande', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bien_id: bien.id, date_arrivee: selection.dateArrivee, date_depart: selection.dateDepart }),
+        body: JSON.stringify({
+          bien_id:     bien.id,
+          date_arrivee: selection.dateArrivee,
+          date_depart:  selection.dateDepart,
+          message:      message.trim() || null,
+        }),
       })
-      const check = await checkRes.json()
-      if (!check.disponible) {
-        toast.error('Ces dates viennent d\'être réservées. Veuillez choisir d\'autres dates.')
-        setSelection(null)
-        return
+      const data = await res.json()
+      if (!res.ok) {
+        // Demande déjà en cours → rediriger vers la demande existante
+        if (res.status === 409 && data.demande_id) {
+          toast.error('Vous avez déjà une demande en cours pour ce bien')
+          router.push(`/reservations/demandes/${data.demande_id}`)
+          return
+        }
+        throw new Error(data.error ?? 'Erreur lors de la demande')
       }
-
-      const commission     = Math.round(total * 0.09)
-      const montantProprio = total - commission
-
-      const { data, error } = await supabase.from('reservations').insert({
-        bien_id:         bien.id,
-        locataire_id:    user.id,
-        proprietaire_id: bien.owner_id,
-        date_debut:      selection.dateArrivee,
-        date_fin:        selection.dateDepart,
-        prix_nuit:       bien.prix,
-        prix_total:      total,
-        commission,
-        montant_proprio: montantProprio,
-        statut:          'en_attente',
-      }).select('id').single()
-
-      if (error) throw error
-
-      await supabase.from('notifications').insert({
-        user_id: bien.owner_id,
-        type:    'reservation_nouvelle',
-        titre:   'Nouvelle réservation',
-        corps:   `Une réservation a été créée pour "${bien.titre}" du ${new Date(selection.dateArrivee).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' })} au ${new Date(selection.dateDepart).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}.`,
-        lien:    '/mon-espace/reservations',
-      })
-
-      toast.success('Réservation créée ! Procédez au paiement.')
-      router.push(`/mon-espace/paiement/${data.id}`)
-    } catch {
-      toast.error('Erreur lors de la réservation')
+      toast.success('Demande envoyée ! Le propriétaire va répondre dans les 12h.')
+      router.push(`/reservations/demandes/${data.demande_id}`)
+    } catch (err: any) {
+      toast.error(err.message ?? 'Erreur lors de la demande')
     } finally {
       setLoading(false)
     }
@@ -88,6 +70,10 @@ export default function ReservationPanel({ bien }: Props) {
           <p className="font-black text-brun-nuit text-xl">
             <span className="prix">{formatPrix(bien.prix)}</span>
             <span className="text-sm font-normal text-brun-doux ml-1">/nuit</span>
+          </p>
+          <p className="text-[11px] text-brun-doux mt-0.5 flex items-center gap-1">
+            <Send size={10} />
+            Le propriétaire confirme votre demande avant le paiement
           </p>
         </div>
 
@@ -121,22 +107,45 @@ export default function ReservationPanel({ bien }: Props) {
               <span>{formatPrix(prixBase)}</span>
             </div>
             <div className="flex justify-between font-black border-t pt-2" style={{ borderColor: '#E8909F', color: '#1a0a00' }}>
-              <span>Total</span>
+              <span>Total estimé</span>
               <span className="prix">{formatPrix(total)}</span>
             </div>
           </div>
         )}
 
+        {/* Message optionnel */}
+        {selection && (
+          <div>
+            <button
+              onClick={() => setShowMsg(v => !v)}
+              className="flex items-center gap-1.5 text-xs text-brun-doux hover:text-primary-500 transition-colors"
+            >
+              <MessageSquare size={12} />
+              {showMsg ? 'Masquer le message' : 'Ajouter un message au propriétaire (optionnel)'}
+            </button>
+            {showMsg && (
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="Présentez-vous, donnez des détails sur votre séjour…"
+                className="input-field resize-none mt-2 text-sm"
+              />
+            )}
+          </div>
+        )}
+
         <button
-          onClick={handleReserver}
+          onClick={handleDemandeReservation}
           disabled={loading || !selection}
           className="btn btn-primary w-full justify-center gap-2 disabled:opacity-50"
         >
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <Calendar size={16} />}
-          {loading ? 'Réservation…' : selection ? `Réserver · ${formatPrix(total)}` : 'Sélectionnez les dates'}
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          {loading ? 'Envoi…' : selection ? 'Envoyer la demande' : 'Sélectionnez les dates'}
         </button>
 
-        {/* Bouton voir disponibilité (utilisateur connecté uniquement) */}
+        {/* Voir disponibilités */}
         {!authLoading && user && (
           <button
             onClick={() => setShowCalModal(true)}
@@ -147,7 +156,7 @@ export default function ReservationPanel({ bien }: Props) {
         )}
 
         <p className="text-[10px] text-center text-brun-doux">
-          Aucun débit avant confirmation · Paiement via FedaPay
+          Aucun débit avant confirmation du propriétaire · Paiement via FedaPay
         </p>
       </div>
 
@@ -162,7 +171,6 @@ export default function ReservationPanel({ bien }: Props) {
               </button>
             </div>
             <div className="p-4">
-              <p className="text-xs text-brun-doux mb-3">Consultez les dates disponibles avant de réserver.</p>
               <CalendrierDisponibilite bienId={bien.id} readOnly />
             </div>
             <div className="p-4 pt-0">
