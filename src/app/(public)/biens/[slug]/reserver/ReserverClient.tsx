@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, ShieldCheck, Loader2 } from 'lucide-react'
+import { ArrowLeft, MapPin, ShieldCheck, Loader2, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatPrix } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
@@ -29,7 +29,7 @@ export default function ReserverClient({ bien }: Props) {
     if (!selection) return
     setLoading(true)
     try {
-      const res = await fetch('/api/reservations/creer', {
+      const res = await fetch('/api/reservations/creer-instantanee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bien_id: bien.id, date_arrivee: selection.dateArrivee, date_depart: selection.dateDepart }),
@@ -52,8 +52,14 @@ export default function ReserverClient({ bien }: Props) {
           <ArrowLeft size={16} /> Retour à l&apos;annonce
         </Link>
 
-        <h1 className="text-xl font-black mb-1" style={{ color: '#1a0a00' }}>Réserver ce bien</h1>
-        <p className="text-sm mb-6" style={{ color: '#7a5c3a' }}>{bien.titre}</p>
+        <div className="flex items-center gap-2 mb-1">
+          <Zap size={20} className="text-accent-500" />
+          <h1 className="text-xl font-black" style={{ color: '#1a0a00' }}>Réservation instantanée</h1>
+        </div>
+        <p className="text-sm mb-2" style={{ color: '#7a5c3a' }}>{bien.titre}</p>
+        <p className="text-xs text-brun-doux bg-accent-50 border border-accent-200 rounded-xl px-3 py-2 mb-4">
+          ⚡ Ce bien est confirmé <strong>immédiatement</strong> après paiement. L&apos;adresse et le contact du propriétaire vous seront débloqués dès confirmation.
+        </p>
 
         {/* Aperçu bien */}
         <div className="bg-white rounded-2xl border border-primary-50 p-4 flex gap-4 mb-6">
@@ -94,10 +100,6 @@ export default function ReserverClient({ bien }: Props) {
                 <span style={{ color: '#7a5c3a' }}>{formatPrix(bien.prix)} × {selection.nbNuits} nuit{selection.nbNuits > 1 ? 's' : ''}</span>
                 <span className="font-semibold" style={{ color: '#1a0a00' }}>{formatPrix(selection.total)}</span>
               </div>
-              <div className="flex justify-between">
-                <span style={{ color: '#7a5c3a' }}>Frais de service</span>
-                <span className="font-semibold text-green-600">Gratuit</span>
-              </div>
               <div className="h-px my-2" style={{ background: '#FAE8EC' }} />
               <div className="flex justify-between font-black">
                 <span style={{ color: '#1a0a00' }}>Total</span>
@@ -119,7 +121,7 @@ export default function ReserverClient({ bien }: Props) {
         </button>
 
         <p className="text-xs text-center mt-3" style={{ color: '#7a5c3a' }}>
-          Paiement sécurisé via FedaPay · Flooz, T-Money, Wave, CB
+          🔒 Paiement 100% sécurisé via FedaPay · Flooz · T-Money · Wave · CB
         </p>
       </div>
     </div>
