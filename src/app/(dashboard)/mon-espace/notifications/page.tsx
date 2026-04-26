@@ -44,7 +44,7 @@ export default function NotificationsPage() {
     loadNotifs()
 
     const channel = supabase
-      .channel(`notifs-page-${user.id}`)
+      .channel(`notifs-page-${user.id}-${Date.now()}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'notifications',
         filter: `user_id=eq.${user.id}`,
