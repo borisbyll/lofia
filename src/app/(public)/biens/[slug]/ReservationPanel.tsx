@@ -7,7 +7,6 @@ import toast from 'react-hot-toast'
 import { formatPrix } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
-import { COMMISSION } from '@/lib/constants'
 import type { Bien } from '@/types/immobilier'
 import CalendrierDisponibilite from '@/components/reservations/CalendrierDisponibilite'
 
@@ -22,11 +21,8 @@ export default function ReservationPanel({ bien }: Props) {
   const [loading,      setLoading]      = useState(false)
   const [showCalModal, setShowCalModal] = useState(false)
 
-  const prixBase       = selection ? bien.prix * selection.nbNuits : 0
-  const commission     = Math.round(prixBase * COMMISSION.VOYAGEUR_PCT / 100)
-  const total          = prixBase + commission
-  const commissionHote = Math.round(prixBase * COMMISSION.HOTE_PCT / 100)
-  const montantProprio = prixBase - commissionHote
+  const prixBase = selection ? bien.prix * selection.nbNuits : 0
+  const total    = prixBase  // CDC v2 §4.2 : locataire paie le prix affiché
 
   const handleReserver = async () => {
     if (!user) {
@@ -122,10 +118,6 @@ export default function ReservationPanel({ bien }: Props) {
             <div className="flex justify-between" style={{ color: '#7a5c3a' }}>
               <span>{formatPrix(bien.prix)} × {selection.nbNuits} nuit{selection.nbNuits > 1 ? 's' : ''}</span>
               <span>{formatPrix(prixBase)}</span>
-            </div>
-            <div className="flex justify-between text-xs" style={{ color: '#7a5c3a', opacity: 0.8 }}>
-              <span>Frais de service ({COMMISSION.VOYAGEUR_PCT}%)</span>
-              <span>{formatPrix(commission)}</span>
             </div>
             <div className="flex justify-between font-black border-t pt-2" style={{ borderColor: '#E8909F', color: '#1a0a00' }}>
               <span>Total</span>

@@ -18,12 +18,8 @@ export default function NotifBell() {
     if (!user) return
     loadNotifs()
 
-    const channelName = 'notifs-' + user.id
-    // Supprimer le channel s'il existe déjà (React Strict Mode double-mount)
-    supabase.removeChannel(supabase.channel(channelName))
-
     const channel = supabase
-      .channel(channelName)
+      .channel('notifs-' + user.id)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
         payload => setNotifs(prev => [payload.new as Notification, ...prev].slice(0, 20)))
       .subscribe()

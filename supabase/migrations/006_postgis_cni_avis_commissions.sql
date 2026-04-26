@@ -54,20 +54,17 @@ CREATE TABLE IF NOT EXISTS documents (
 
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Proprio voit ses docs" ON documents
-  FOR SELECT USING (
-    bien_id IN (SELECT id FROM biens WHERE user_id = auth.uid())
-  );
-
-CREATE POLICY "Modérateur voit tous les docs" ON documents
-  FOR SELECT USING (
-    (SELECT role FROM profiles WHERE id = auth.uid()) IN ('moderateur', 'admin')
-  );
-
-CREATE POLICY "Proprio insère ses docs" ON documents
-  FOR INSERT WITH CHECK (
-    bien_id IN (SELECT id FROM biens WHERE user_id = auth.uid())
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='documents' AND policyname='Proprio voit ses docs') THEN
+    EXECUTE 'CREATE POLICY "Proprio voit ses docs" ON documents FOR SELECT USING (bien_id IN (SELECT id FROM biens WHERE owner_id = (select auth.uid())))';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='documents' AND policyname='Modérateur voit tous les docs') THEN
+    EXECUTE 'CREATE POLICY "Modérateur voit tous les docs" ON documents FOR SELECT USING ((SELECT role FROM profiles WHERE id = (select auth.uid())) IN (''moderateur'', ''admin''))';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='documents' AND policyname='Proprio insère ses docs') THEN
+    EXECUTE 'CREATE POLICY "Proprio insère ses docs" ON documents FOR INSERT WITH CHECK (bien_id IN (SELECT id FROM biens WHERE owner_id = (select auth.uid())))';
+  END IF;
+END $$;
 
 -- 5. Table avis
 CREATE TABLE IF NOT EXISTS avis (

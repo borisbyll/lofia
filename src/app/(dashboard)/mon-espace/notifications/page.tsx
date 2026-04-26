@@ -43,11 +43,8 @@ export default function NotificationsPage() {
     if (!user) return
     loadNotifs()
 
-    const channelName = 'notifs-page-' + user.id
-    supabase.removeChannel(supabase.channel(channelName))
-
     const channel = supabase
-      .channel(channelName)
+      .channel('notifs-page-' + user.id)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'notifications',
         filter: `user_id=eq.${user.id}`,
