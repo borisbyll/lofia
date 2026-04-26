@@ -54,10 +54,17 @@ export const PRIX_RANGES_NUIT = [
   { label: 'Plus de 100k',  min: 100_000, max: null },
 ] as const
 
-/** Commissions (CDC §5) */
+/** Commissions (CDC v2 §4.2)
+ * Modèle : locataire paie le prix affiché. LOFIA retient 9%. Proprio reçoit 91%.
+ * La commission n'est PAS ajoutée en supplément — elle est prélevée sur le montant payé.
+ */
 export const COMMISSION = {
-  VOYAGEUR_PCT: 8,   // 8% payé par le locataire
-  HOTE_PCT: 3,       // 3% prélevé sur le paiement hôte
+  LOFIA_PCT: 9,           // 9% prélevé sur le montant total (côté locataire invisible)
+  PROPRIO_PART: 0.91,     // 91% du montant total versé au propriétaire
+  /** Calcule la commission LOFIA sur un montant donné */
+  calculer: (montantTotal: number) => Math.round(montantTotal * 0.09),
+  /** Calcule la part du propriétaire */
+  montantProprio: (montantTotal: number) => montantTotal - Math.round(montantTotal * 0.09),
 } as const
 
 /** Rayon géolocalisation */

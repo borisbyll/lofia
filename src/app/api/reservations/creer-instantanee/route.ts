@@ -50,11 +50,11 @@ export async function POST(request: Request) {
     const d1 = new Date(date_arrivee)
     const d2 = new Date(date_depart)
     const nb_nuits = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
-    const prix_nuit = bien.prix ?? 0
-    const COMMISSION_VOYAGEUR = 0.09
-    const montant_total = Math.round(prix_nuit * nb_nuits * (1 + COMMISSION_VOYAGEUR))
-    const commission = Math.round(prix_nuit * nb_nuits * COMMISSION_VOYAGEUR)
-    const montant_proprio = prix_nuit * nb_nuits - Math.round(prix_nuit * nb_nuits * 0.03)
+    const prix_nuit      = bien.prix ?? 0
+    // CDC v2 §4.2 : locataire paie le prix affiché. LOFIA retient 9%. Proprio reçoit 91%.
+    const montant_total  = prix_nuit * nb_nuits                  // prix exact affiché au locataire
+    const commission     = Math.round(montant_total * 0.09)      // 9% LOFIA
+    const montant_proprio = montant_total - commission           // 91% pour le propriétaire
 
     // Créer la transaction FedaPay
     const fedapayRes = await fetch(

@@ -125,7 +125,7 @@ export default function EditBienPage() {
   )
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto w-full pb-24 lg:pb-8">
+    <div className="p-4 lg:p-8 max-w-2xl mx-auto w-full pb-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-black text-gray-900">Modifier l'annonce</h1>
         <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600">
@@ -290,18 +290,16 @@ export default function EditBienPage() {
         </div>
       </div>
 
-      {/* CTA fixe */}
-      <div className="fixed bottom-0 left-0 right-0 lg:relative lg:mt-6 bg-white lg:bg-transparent border-t lg:border-0 border-gray-200 p-4 lg:p-0">
-        <div className="max-w-2xl mx-auto flex gap-3">
-          <button onClick={() => router.back()} className="btn btn-outline flex-1 justify-center">
-            Annuler
-          </button>
-          <button onClick={handleSave} disabled={saving}
-            className="btn btn-primary flex-1 justify-center gap-2 disabled:opacity-50">
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-            {saving ? 'Enregistrement…' : 'Sauvegarder'}
-          </button>
-        </div>
+      {/* CTA — dans le flux du document */}
+      <div className="mt-6 flex gap-3">
+        <button onClick={() => router.back()} className="btn btn-outline flex-1 justify-center">
+          Annuler
+        </button>
+        <button onClick={handleSave} disabled={saving}
+          className="btn btn-primary flex-1 justify-center gap-2 disabled:opacity-50">
+          {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+          {saving ? 'Enregistrement…' : 'Sauvegarder'}
+        </button>
       </div>
     </div>
   )

@@ -55,9 +55,10 @@ export async function POST(request: Request) {
     const fin      = new Date(date_depart)
     const nbNuits  = Math.ceil((fin.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24))
     const prixNuit = bien.prix
-    const total    = prixNuit * nbNuits
-    const commission = Math.round(total * 0.09)
-    const montantProprio = total - Math.round(total * 0.03)
+    // CDC v2 §4.2 — locataire paie le prix affiché, LOFIA retient 9%, proprio reçoit 91%
+    const total          = prixNuit * nbNuits
+    const commission     = Math.round(total * 0.09)
+    const montantProprio = total - commission   // 91% du montant total
 
     return NextResponse.json({
       disponible: true,

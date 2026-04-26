@@ -50,10 +50,9 @@ export async function POST(request: Request) {
         date_fin:       date_depart,
         nb_nuits:       dispo.nb_nuits,
         prix_total:     dispo.montant_total,
-        commission:     dispo.commission_lofia,
-        commission_voyageur: Math.round(dispo.montant_total * 0.08),
-        commission_hote:     Math.round(dispo.montant_total * 0.03),
-        montant_proprio:     dispo.montant_proprietaire,
+        // CDC v2 §4.2 — 9% total LOFIA, proprio = 91%
+        commission:      dispo.commission_lofia,
+        montant_proprio: dispo.montant_proprietaire,
         prix_nuit:      dispo.prix_nuit,
         statut:         'en_attente',
         paiement_effectue: false,

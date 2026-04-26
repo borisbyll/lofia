@@ -293,7 +293,7 @@ export default function PublierBienPage() {
   const progress = (etape / 4) * 100
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto w-full pb-32 lg:pb-12">
+    <div className="p-4 lg:p-8 max-w-2xl mx-auto w-full pb-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900">Publier une annonce</h1>
@@ -773,30 +773,28 @@ export default function PublierBienPage() {
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 lg:relative lg:mt-6 bg-white lg:bg-transparent border-t lg:border-0 border-gray-200 p-4 lg:p-0 safe-area-pb">
-        <div className="max-w-2xl mx-auto flex gap-3">
-          {etape > 1 && (
-            <button type="button" onClick={goPrev}
-              className="btn btn-outline flex-1 justify-center gap-2">
-              <ChevronLeft size={18} />
-              Retour
-            </button>
-          )}
-          {etape < 4 ? (
-            <button type="button" onClick={goNext}
-              className="btn btn-primary flex-1 justify-center gap-2">
-              Continuer
-              <ChevronRight size={18} />
-            </button>
-          ) : (
-            <button type="button" onClick={handleSubmit} disabled={loading}
-              className="btn btn-primary flex-1 justify-center gap-2 disabled:opacity-50">
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-              {loading ? "Publication\u2026" : "Publier l'annonce"}
-            </button>
-          )}
-        </div>
+      {/* Navigation — dans le flux du document, pas fixed */}
+      <div className="mt-6 flex gap-3">
+        {etape > 1 && (
+          <button type="button" onClick={goPrev}
+            className="btn btn-outline flex-1 justify-center gap-2">
+            <ChevronLeft size={18} />
+            Retour
+          </button>
+        )}
+        {etape < 4 ? (
+          <button type="button" onClick={goNext}
+            className="btn btn-primary flex-1 justify-center gap-2">
+            Continuer
+            <ChevronRight size={18} />
+          </button>
+        ) : (
+          <button type="button" onClick={handleSubmit} disabled={loading}
+            className="btn btn-primary flex-1 justify-center gap-2 disabled:opacity-50">
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+            {loading ? "Publication…" : "Publier l'annonce"}
+          </button>
+        )}
       </div>
     </div>
   )
