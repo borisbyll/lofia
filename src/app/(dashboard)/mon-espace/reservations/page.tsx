@@ -353,6 +353,53 @@ function SectionReservations({
   )
 }
 
+/* ── Carte demande reçue (propriétaire) ─────────────────────── */
+function DemandePropCard({ d }: { d: Demande }) {
+  const bien     = Array.isArray(d.biens) ? d.biens[0] : (d as any).biens
+  const locataire = (d as any).locataire
+  const expired  = new Date(d.expire_at) < new Date()
+  return (
+    <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
+      <div className="bg-amber-50 px-4 py-2 flex items-center justify-between">
+        <span className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
+          <Clock size={12} /> Réponse requise
+        </span>
+        {!expired && <TimerExpiration expire_at={d.expire_at} label="Expire dans" />}
+        {expired && <span className="text-xs text-red-500 font-semibold">Expirée</span>}
+      </div>
+      <div className="flex items-center gap-4 p-4 border-b border-amber-50">
+        <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
+          {bien?.photos?.[0]
+            ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center"><Home size={18} style={{ color: '#E8909F' }} /></div>
+          }
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm truncate text-brun-nuit">{bien?.titre ?? '—'}</p>
+          <p className="text-xs text-brun-doux mt-0.5">
+            {locataire?.nom ?? 'Locataire'} · {formatDate(d.date_arrivee)} → {formatDate(d.date_depart)} ({d.nb_nuits} nuit{d.nb_nuits > 1 ? 's' : ''})
+          </p>
+          <p className="font-black text-primary-500 text-sm mt-0.5">{formatPrix(d.montant_total)}</p>
+        </div>
+      </div>
+      <div className="p-4 flex gap-3">
+        <Link
+          href={`/reservations/decision/${(d as any).token_refus}`}
+          className="btn btn-outline flex-1 justify-center text-sm border-red-200 text-red-600 hover:bg-red-50"
+        >
+          <XCircle size={14} /> Refuser
+        </Link>
+        <Link
+          href={`/reservations/decision/${(d as any).token_confirmation}`}
+          className="btn btn-primary flex-1 justify-center text-sm"
+        >
+          <CheckCircle size={14} /> Confirmer
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 /* ── Carte demande CDC v2 §6.1 ───────────────────────────────── */
 interface Demande {
   id: string
@@ -426,7 +473,8 @@ export default function ReservationsPage() {
   const { mode }      = useDashboardMode()
   const [resasProp, setResasProp] = useState<Reservation[]>([])
   const [resasLoc,  setResasLoc]  = useState<Reservation[]>([])
-  const [demandes,  setDemandes]  = useState<Demande[]>([])
+  const [demandes,      setDemandes]      = useState<Demande[]>([])
+  const [demandesProp,  setDemandesProp]  = useState<Demande[]>([])
   const [loading,   setLoading]   = useState(true)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [avisTarget, setAvisTarget] = useState<AvisTarget | null>(null)
@@ -447,7 +495,7 @@ export default function ReservationsPage() {
       locataire:profiles!locataire_id(nom),
       proprietaire:profiles!proprietaire_id(nom)
     `
-    const [resProp, resLoc, resDem] = await Promise.all([
+    const [resProp, resLoc, resDemLoc, resDemProp] = await Promise.all([
       supabase.from('reservations').select(baseSelect)
         .eq('proprietaire_id', user!.id)
         .order('created_at', { ascending: false })
@@ -457,9 +505,16 @@ export default function ReservationsPage() {
         .neq('proprietaire_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(50),
+      // Demandes envoyées par le locataire
       supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, tentatives_paiement, biens(id, titre, photos, photo_principale, ville)')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, tentatives_paiement, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
         .eq('locataire_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(30),
+      // Demandes reçues par le propriétaire
+      supabase.from('demandes_reservation')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
+        .eq('proprietaire_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(30),
     ])
@@ -468,7 +523,8 @@ export default function ReservationsPage() {
 
     setResasProp(((resProp.data ?? []) as unknown as Reservation[]).map(normaliser))
     setResasLoc(((resLoc.data ?? []) as unknown as Reservation[]).map(normaliser))
-    setDemandes((resDem.data ?? []) as unknown as Demande[])
+    setDemandes((resDemLoc.data ?? []) as unknown as Demande[])
+    setDemandesProp((resDemProp.data ?? []) as unknown as Demande[])
     setLoading(false)
   }
 
@@ -524,12 +580,26 @@ export default function ReservationsPage() {
       </div>
 
       {isProprio ? (
-        <SectionReservations
-          titre="Réservations reçues"
-          resas={resasProp}
-          vue="proprietaire"
-          loadingId={loadingId}
-        />
+        <>
+          {/* Demandes en attente de réponse */}
+          {demandesProp.filter(d => d.statut === 'en_attente').length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-gray-800 text-sm">Demandes à traiter</h2>
+                <span className="badge badge-warning text-xs">{demandesProp.filter(d => d.statut === 'en_attente').length}</span>
+              </div>
+              {demandesProp.filter(d => d.statut === 'en_attente').map(d => (
+                <DemandePropCard key={d.id} d={d} />
+              ))}
+            </div>
+          )}
+          <SectionReservations
+            titre="Réservations reçues"
+            resas={resasProp}
+            vue="proprietaire"
+            loadingId={loadingId}
+          />
+        </>
       ) : (
         <>
           {/* 4 onglets CDC v2 */}
