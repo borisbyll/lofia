@@ -122,10 +122,8 @@ export default function MessageriePage() {
       supabase.removeChannel(subscriptionRef.current)
       subscriptionRef.current = null
     }
-    const channelName = `conv-${conv.id}`
-    supabase.removeChannel(supabase.channel(channelName))
     subscriptionRef.current = supabase
-      .channel(channelName)
+      .channel(`conv-${conv.id}-${Date.now()}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',

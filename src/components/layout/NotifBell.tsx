@@ -18,8 +18,9 @@ export default function NotifBell() {
     if (!user) return
     loadNotifs()
 
+    // Suffixe unique pour éviter de récupérer un canal déjà subscribed du registry
     const channel = supabase
-      .channel('notifs-' + user.id)
+      .channel(`notifs-${user.id}-${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
         payload => setNotifs(prev => [payload.new as Notification, ...prev].slice(0, 20)))
       .subscribe()

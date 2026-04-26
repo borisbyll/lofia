@@ -53,7 +53,7 @@ export default function TrackerDemandeReservation({ demande, onStatutChange }: P
 
   // Supabase Realtime — mise à jour statut sans rechargement
   useEffect(() => {
-    const channel = supabase.channel(`demande-${demande.id}`)
+    const channel = supabase.channel(`demande-${demande.id}-${Date.now()}`)
     channel.on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'demandes_reservation', filter: `id=eq.${demande.id}` },
