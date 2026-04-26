@@ -46,19 +46,20 @@ export default function ReservationPanel({ bien }: Props) {
         return
       }
 
+      const commission     = Math.round(total * 0.09)
+      const montantProprio = total - commission
+
       const { data, error } = await supabase.from('reservations').insert({
-        bien_id:             bien.id,
-        locataire_id:        user.id,
-        proprietaire_id:     bien.owner_id,
-        date_debut:          selection.dateArrivee,
-        date_fin:            selection.dateDepart,
-        prix_nuit:           bien.prix,
-        prix_total:          total,
-        commission:          commission + commissionHote,
-        commission_voyageur: commission,
-        commission_hote:     commissionHote,
-        montant_proprio:     montantProprio,
-        statut:              'en_attente',
+        bien_id:         bien.id,
+        locataire_id:    user.id,
+        proprietaire_id: bien.owner_id,
+        date_debut:      selection.dateArrivee,
+        date_fin:        selection.dateDepart,
+        prix_nuit:       bien.prix,
+        prix_total:      total,
+        commission,
+        montant_proprio: montantProprio,
+        statut:          'en_attente',
       }).select('id').single()
 
       if (error) throw error
