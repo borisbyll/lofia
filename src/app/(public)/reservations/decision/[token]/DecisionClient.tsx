@@ -83,7 +83,7 @@ export default function DecisionClient({ demande, token, isConfirmToken }: Props
             <div>
               <p className="text-white font-black text-sm">⚡ DEMANDE URGENTE</p>
               <p className="text-orange-100 text-xs mt-0.5">
-                Le locataire attend une réponse dans les 2h. Passé ce délai, la demande sera automatiquement annulée et les dates seront libérées.
+                Le locataire attend une réponse dans les 8h. Passé ce délai, la demande sera automatiquement annulée et les dates seront libérées.
               </p>
             </div>
           </div>
@@ -163,7 +163,7 @@ export default function DecisionClient({ demande, token, isConfirmToken }: Props
           <div className="bg-amber-50 rounded-2xl border border-amber-100 p-6 text-center">
             <Clock size={36} className="text-amber-400 mx-auto mb-3" />
             <h2 className="font-bold text-amber-800 mb-1">Demande expirée</h2>
-            <p className="text-sm text-amber-700">Le délai de réponse {demande.is_urgent ? 'de 2h (urgence)' : 'de 12h'} est dépassé. La demande a été annulée automatiquement.</p>
+            <p className="text-sm text-amber-700">Le délai de réponse {demande.is_urgent ? 'de 8h (urgence)' : 'de 48h'} est dépassé. La demande a été annulée automatiquement.</p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">

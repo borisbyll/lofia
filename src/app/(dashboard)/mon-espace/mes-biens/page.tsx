@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -43,28 +43,31 @@ export default function MesBiensPage() {
   const [filter,  setFilter]  = useState<string>('all')
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!user) return
-    loadBiens()
+  const loadBiens = useCallback(async () => {
+    if (!user) { setLoading(false); return }
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('biens')
+        .select('id, slug, titre, statut, categorie, prix, ville, vues, favoris_count, photos, created_at')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) toast.error('Erreur de chargement')
+      else setBiens(data ?? [])
+    } catch {
+      toast.error('Erreur de chargement')
+    } finally {
+      setLoading(false)
+    }
   }, [user])
+
+  useEffect(() => { loadBiens() }, [loadBiens])
 
   useRealtimeRefresh(
     `mes-biens-${user?.id}`,
     [{ table: 'biens', filter: user ? `owner_id=eq.${user.id}` : undefined }],
     loadBiens,
   )
-
-  const loadBiens = async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('biens')
-      .select('id, slug, titre, statut, categorie, prix, ville, vues, favoris_count, photos, created_at')
-      .eq('owner_id', user!.id)
-      .order('created_at', { ascending: false })
-    if (error) toast.error('Erreur de chargement')
-    else setBiens(data ?? [])
-    setLoading(false)
-  }
 
   const filtered = filter === 'all' ? biens : biens.filter(b => b.statut === filter)
 

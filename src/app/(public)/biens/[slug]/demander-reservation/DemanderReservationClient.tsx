@@ -65,7 +65,7 @@ export default function DemanderReservationClient({ bien }: Props) {
         return
       }
 
-      toast.success('Demande envoyée ! Le propriétaire a 12h pour répondre.')
+      toast.success('Demande envoyée ! Le propriétaire a 48h pour répondre.')
       router.push(`/reservations/demandes/${data.demande_id}`)
     } catch {
       toast.error('Erreur réseau')
@@ -107,7 +107,7 @@ export default function DemanderReservationClient({ bien }: Props) {
               <div className="text-xs text-primary-700 space-y-1">
                 <p className="font-semibold">Comment ça marche ?</p>
                 <p>1. Vous envoyez votre demande <span className="font-semibold">(gratuit)</span></p>
-                <p>2. Le propriétaire confirme ou refuse sous 12h</p>
+                <p>2. Le propriétaire confirme ou refuse sous 48h</p>
                 <p>3. Si confirmé, vous recevez un lien de paiement</p>
                 <p>4. Vous payez pour finaliser votre réservation</p>
                 <p className="font-semibold text-primary-600 mt-1">⚠️ AUCUN PAIEMENT n&apos;est demandé à cette étape</p>

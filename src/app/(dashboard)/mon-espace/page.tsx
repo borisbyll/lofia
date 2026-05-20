@@ -152,61 +152,60 @@ export default function DashboardPage() {
   }, [user])
 
   const loadAll = async () => {
+    if (!user) { setLoading(false); return }
     setLoading(true)
-    const uid = user!.id
+    const uid = user.id
+    try {
+      const [biensRes, favRes, resaPropRes, resaLocRes, msgRes, demPropRes, demLocRes, demPendingPropRes, demActiveLocRes] = await Promise.all([
+        supabase.from('biens').select('id, titre, statut, prix, categorie, vues').eq('owner_id', uid).order('created_at', { ascending: false }).limit(5),
+        supabase.from('favoris').select('id', { count: 'exact' }).eq('user_id', uid),
+        supabase.from('reservations').select('id, statut, date_debut, date_fin, prix_total, montant_proprio, locataire:profiles!locataire_id(nom), bien:biens!bien_id(titre)').eq('proprietaire_id', uid).order('created_at', { ascending: false }),
+        supabase.from('reservations').select('id, statut, date_debut, date_fin, prix_total, bien:biens!bien_id(titre, ville)').eq('locataire_id', uid).order('created_at', { ascending: false }).limit(10),
+        supabase.from('messages_contact').select('id', { count: 'exact' }).eq('owner_id', uid).eq('lu', false),
+        supabase.from('demandes_reservation').select('statut').eq('proprietaire_id', uid),
+        supabase.from('demandes_reservation').select('statut').eq('locataire_id', uid),
+        supabase.from('demandes_reservation')
+          .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, token_confirmation, token_refus, biens(id, titre, photos, photo_principale), locataire:profiles!demandes_reservation_locataire_id_fkey(nom)')
+          .eq('proprietaire_id', uid).eq('statut', 'en_attente').order('expire_at', { ascending: true }).limit(5),
+        supabase.from('demandes_reservation')
+          .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, is_urgent, biens(id, titre, photos, photo_principale)')
+          .eq('locataire_id', uid).in('statut', ['en_attente', 'confirmee']).order('created_at', { ascending: false }).limit(5),
+      ])
 
-    const [biensRes, favRes, resaPropRes, resaLocRes, msgRes, demPropRes, demLocRes, demPendingPropRes, demActiveLocRes] = await Promise.all([
-      supabase.from('biens').select('id, titre, statut, prix, categorie, vues').eq('owner_id', uid).order('created_at', { ascending: false }).limit(5),
-      supabase.from('favoris').select('id', { count: 'exact' }).eq('user_id', uid),
-      supabase.from('reservations').select('id, statut, date_debut, date_fin, prix_total, montant_proprio, locataire:profiles!locataire_id(nom), bien:biens!bien_id(titre)').eq('proprietaire_id', uid).order('created_at', { ascending: false }),
-      supabase.from('reservations').select('id, statut, date_debut, date_fin, prix_total, bien:biens!bien_id(titre, ville)').eq('locataire_id', uid).order('created_at', { ascending: false }).limit(10),
-      supabase.from('messages_contact').select('id', { count: 'exact' }).eq('owner_id', uid).eq('lu', false),
-      supabase.from('demandes_reservation').select('statut').eq('proprietaire_id', uid),
-      supabase.from('demandes_reservation').select('statut').eq('locataire_id', uid),
-      supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, token_confirmation, token_refus, biens(id, titre, photos, photo_principale), locataire:profiles!demandes_reservation_locataire_id_fkey(nom)')
-        .eq('proprietaire_id', uid).eq('statut', 'en_attente').order('expire_at', { ascending: true }).limit(5),
-      supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, is_urgent, biens(id, titre, photos, photo_principale)')
-        .eq('locataire_id', uid).in('statut', ['en_attente', 'confirmee']).order('created_at', { ascending: false }).limit(5),
-    ])
+      const allBiens = biensRes.data ?? []
+      const totalVues = allBiens.reduce((s, b) => s + (b.vues ?? 0), 0)
+      const propResas = (resaPropRes.data ?? []) as unknown as ReservationProprietaire[]
+      const revenus = propResas.filter(r => r.statut === 'termine').reduce((s: number, r: any) => s + (r.montant_proprio ?? 0), 0)
 
-    const allBiens = biensRes.data ?? []
-    const totalVues = allBiens.reduce((s, b) => s + (b.vues ?? 0), 0)
-    const propResas = (resaPropRes.data ?? []) as unknown as ReservationProprietaire[]
-    const revenus = propResas.filter(r => r.statut === 'termine').reduce((s: number, r: any) => s + (r.montant_proprio ?? 0), 0)
+      setStatsP({ annonces: allBiens.length, vues: totalVues, reservations: propResas.length, revenus })
 
-    setStatsP({
-      annonces:     allBiens.length,
-      vues:         totalVues,
-      reservations: propResas.length,
-      revenus,
-    })
+      const locResas = (resaLocRes.data ?? []) as unknown as ReservationLocataire[]
+      setStatsL({
+        reservations: locResas.length,
+        enCours:      locResas.filter(r => r.statut === 'en_sejour' || r.statut === 'confirme').length,
+        favoris:      favRes.count ?? 0,
+        messages:     msgRes.count ?? 0,
+      })
 
-    const locResas = (resaLocRes.data ?? []) as unknown as ReservationLocataire[]
-    setStatsL({
-      reservations: locResas.length,
-      enCours:      locResas.filter(r => r.statut === 'en_sejour' || r.statut === 'confirme').length,
-      favoris:      favRes.count ?? 0,
-      messages:     msgRes.count ?? 0,
-    })
-
-    const buildDemStat = (rows: { statut: string }[]): StatsDemandes => ({
-      total:     rows.length,
-      enAttente: rows.filter(r => r.statut === 'en_attente').length,
-      acceptees: rows.filter(r => ['confirmee', 'payee'].includes(r.statut)).length,
-      refusees:  rows.filter(r => r.statut === 'refusee').length,
-      annulees:  rows.filter(r => ['expiree', 'annulee_locataire', 'annulee_systeme'].includes(r.statut)).length,
-    })
-    setDemandesPSt(buildDemStat((demPropRes.data ?? []) as { statut: string }[]))
-    setDemandesLSt(buildDemStat((demLocRes.data ?? []) as { statut: string }[]))
-
-    setAnnonces(allBiens as AnnonceRecente[])
-    setResasProp(propResas.slice(0, 5))
-    setResasLoc(locResas.slice(0, 5))
-    setDemandesPendingProp((demPendingPropRes.data ?? []) as unknown as DemandeActive[])
-    setDemandesActiveLoc((demActiveLocRes.data ?? []) as unknown as DemandeActive[])
-    setLoading(false)
+      const buildDemStat = (rows: { statut: string }[]): StatsDemandes => ({
+        total:     rows.length,
+        enAttente: rows.filter(r => r.statut === 'en_attente').length,
+        acceptees: rows.filter(r => ['confirmee', 'payee'].includes(r.statut)).length,
+        refusees:  rows.filter(r => r.statut === 'refusee').length,
+        annulees:  rows.filter(r => ['expiree', 'annulee_locataire', 'annulee_systeme'].includes(r.statut)).length,
+      })
+      setDemandesPSt(buildDemStat((demPropRes.data ?? []) as { statut: string }[]))
+      setDemandesLSt(buildDemStat((demLocRes.data ?? []) as { statut: string }[]))
+      setAnnonces(allBiens as AnnonceRecente[])
+      setResasProp(propResas.slice(0, 5))
+      setResasLoc(locResas.slice(0, 5))
+      setDemandesPendingProp((demPendingPropRes.data ?? []) as unknown as DemandeActive[])
+      setDemandesActiveLoc((demActiveLocRes.data ?? []) as unknown as DemandeActive[])
+    } catch {
+      // silently fail - data will be empty but page will render
+    } finally {
+      setLoading(false)
+    }
   }
 
   const [salut, setSalut] = useState('Bonjour')

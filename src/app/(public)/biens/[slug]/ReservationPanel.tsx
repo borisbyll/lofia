@@ -70,7 +70,7 @@ export default function ReservationPanel({ bien }: Props) {
           }
           throw new Error(data.error ?? 'Erreur lors de la demande')
         }
-        toast.success('Demande envoyée ! Le propriétaire va répondre dans les 12h.')
+        toast.success('Demande envoyée ! Le propriétaire va répondre dans les 48h.')
         router.push(`/reservations/demandes/${data.demande_id}`)
       }
     } catch (err: any) {
@@ -226,7 +226,7 @@ export default function ReservationPanel({ bien }: Props) {
                 Demande urgente
               </p>
               <p className={`text-[10px] ${isUrgent ? 'text-orange-500' : 'text-gray-400'}`}>
-                {isUrgent ? '⚡ Réponse garantie en 2h max' : 'Le propriétaire répond en 12h'}
+                {isUrgent ? '⚡ Réponse garantie en 8h max' : 'Le propriétaire répond en 48h'}
               </p>
             </div>
             <div className={`w-4 h-4 rounded-full border-2 shrink-0 transition-all ${isUrgent ? 'bg-orange-400 border-orange-400' : 'border-gray-300'}`} />
@@ -262,7 +262,7 @@ export default function ReservationPanel({ bien }: Props) {
           {isInstantanee
             ? '⚡ Paiement immédiat · Dates bloquées instantanément · FedaPay'
             : isUrgent
-            ? '⚡ Urgence · Le proprio a 2h pour répondre'
+            ? '⚡ Urgence · Le proprio a 8h pour répondre'
             : 'Aucun débit avant confirmation · FedaPay'
           }
         </p>

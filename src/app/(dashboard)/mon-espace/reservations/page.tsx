@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 import Link from 'next/link'
 import {
@@ -369,7 +369,7 @@ function DemandePropCard({ d }: { d: Demande }) {
     <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden ${urgent ? 'border-orange-400' : 'border-amber-200'}`}>
       <div className={`px-4 py-2 flex items-center justify-between ${urgent ? 'bg-orange-50' : 'bg-amber-50'}`}>
         <span className={`text-xs font-bold flex items-center gap-1.5 ${urgent ? 'text-orange-700' : 'text-amber-700'}`}>
-          {urgent ? <><Zap size={12} className="text-orange-500" /> URGENT · 2h pour répondre</> : <><Clock size={12} /> Réponse requise</>}
+          {urgent ? <><Zap size={12} className="text-orange-500" /> URGENT · 8h pour répondre</> : <><Clock size={12} /> Réponse requise</>}
         </span>
         {!expired && <TimerExpiration expire_at={d.expire_at} label="Expire dans" />}
         {expired && <span className="text-xs text-red-500 font-semibold">Expirée</span>}
@@ -378,7 +378,7 @@ function DemandePropCard({ d }: { d: Demande }) {
         <div className="bg-orange-500 px-4 py-1.5 flex items-center gap-2">
           <Zap size={12} className="text-white shrink-0" />
           <p className="text-[10px] text-white font-semibold">
-            ⚡ Ce locataire a besoin d&apos;une réponse rapide — répondez dans les 2h pour ne pas perdre cette réservation.
+            ⚡ Ce locataire a besoin d&apos;une réponse rapide — répondez dans les 8h pour ne pas perdre cette réservation.
           </p>
         </div>
       )}
@@ -529,23 +529,8 @@ export default function ReservationsPage() {
   const [avisTarget, setAvisTarget] = useState<AvisTarget | null>(null)
   const [tabLoc, setTabLoc] = useState<'demandes' | 'avenir' | 'passes' | 'annulations'>('demandes')
 
-  useEffect(() => {
-    if (!user) return
-    load()
-  }, [user])
-
-  useRealtimeRefresh(
-    `reservations-page-${user?.id}`,
-    [
-      { table: 'reservations',        filter: user ? `proprietaire_id=eq.${user.id}` : undefined },
-      { table: 'reservations',        filter: user ? `locataire_id=eq.${user.id}`    : undefined },
-      { table: 'demandes_reservation', filter: user ? `proprietaire_id=eq.${user.id}` : undefined },
-      { table: 'demandes_reservation', filter: user ? `locataire_id=eq.${user.id}`    : undefined },
-    ],
-    load,
-  )
-
-  const load = async () => {
+  const load = useCallback(async () => {
+    if (!user) { setLoading(false); return }
     setLoading(true)
     const baseSelect = `
       id, statut, date_debut, date_fin, nb_nuits,
@@ -555,38 +540,52 @@ export default function ReservationsPage() {
       locataire:profiles!locataire_id(nom),
       proprietaire:profiles!proprietaire_id(nom)
     `
-    const [resProp, resLoc, resDemLoc, resDemProp] = await Promise.all([
-      supabase.from('reservations').select(baseSelect)
-        .eq('proprietaire_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(50),
-      supabase.from('reservations').select(baseSelect)
-        .eq('locataire_id', user!.id)
-        .neq('proprietaire_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(50),
-      // Demandes envoyées par le locataire
-      supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, lien_paiement_expire_at, tentatives_paiement, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
-        .eq('locataire_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(30),
-      // Demandes reçues par le propriétaire
-      supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
-        .eq('proprietaire_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(30),
-    ])
+    try {
+      const [resProp, resLoc, resDemLoc, resDemProp] = await Promise.all([
+        supabase.from('reservations').select(baseSelect)
+          .eq('proprietaire_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase.from('reservations').select(baseSelect)
+          .eq('locataire_id', user.id)
+          .neq('proprietaire_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase.from('demandes_reservation')
+          .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, lien_paiement_expire_at, tentatives_paiement, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
+          .eq('locataire_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30),
+        supabase.from('demandes_reservation')
+          .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, lien_paiement_expire_at, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
+          .eq('proprietaire_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30),
+      ])
+      if (resProp.error || resLoc.error) toast.error('Erreur de chargement')
+      setResasProp(((resProp.data ?? []) as unknown as Reservation[]).map(normaliser))
+      setResasLoc(((resLoc.data ?? []) as unknown as Reservation[]).map(normaliser))
+      setDemandes((resDemLoc.data ?? []) as unknown as Demande[])
+      setDemandesProp((resDemProp.data ?? []) as unknown as Demande[])
+    } catch {
+      toast.error('Erreur de chargement')
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
 
-    if (resProp.error || resLoc.error) toast.error('Erreur de chargement')
+  useEffect(() => { load() }, [load])
 
-    setResasProp(((resProp.data ?? []) as unknown as Reservation[]).map(normaliser))
-    setResasLoc(((resLoc.data ?? []) as unknown as Reservation[]).map(normaliser))
-    setDemandes((resDemLoc.data ?? []) as unknown as Demande[])
-    setDemandesProp((resDemProp.data ?? []) as unknown as Demande[])
-    setLoading(false)
-  }
+  useRealtimeRefresh(
+    `reservations-page-${user?.id}`,
+    [
+      { table: 'reservations',         filter: user ? `proprietaire_id=eq.${user.id}` : undefined },
+      { table: 'reservations',         filter: user ? `locataire_id=eq.${user.id}`    : undefined },
+      { table: 'demandes_reservation', filter: user ? `proprietaire_id=eq.${user.id}` : undefined },
+      { table: 'demandes_reservation', filter: user ? `locataire_id=eq.${user.id}`    : undefined },
+    ],
+    load,
+  )
 
   const confirmerArrivee = async (id: string) => {
     setLoadingId(id)
@@ -654,6 +653,47 @@ export default function ReservationsPage() {
             </div>
           )}
 
+          {/* Demandes confirmées — en attente de paiement du locataire */}
+          {demandesProp.filter(d => d.statut === 'confirmee').length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-gray-800 text-sm">En attente de paiement</h2>
+                <span className="badge badge-accent text-xs">{demandesProp.filter(d => d.statut === 'confirmee').length}</span>
+              </div>
+              {demandesProp.filter(d => d.statut === 'confirmee').map(d => {
+                const bien = Array.isArray(d.biens) ? d.biens[0] : (d as any).biens
+                const locataire = (d as any).locataire
+                return (
+                  <div key={d.id} className="bg-white rounded-2xl border-2 border-green-200 shadow-sm overflow-hidden">
+                    <div className="bg-green-50 px-4 py-2 flex items-center justify-between gap-3">
+                      <span className="text-xs font-bold text-green-700 flex items-center gap-1.5">
+                        <CheckCircle size={12} className="text-green-500" /> Vous avez confirmé — en attente du paiement
+                      </span>
+                      {d.lien_paiement_expire_at && (
+                        <TimerExpiration expire_at={d.lien_paiement_expire_at} label="Lien expire dans" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 p-4">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
+                        {bien?.photos?.[0]
+                          ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center"><Home size={18} style={{ color: '#E8909F' }} /></div>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate text-brun-nuit">{bien?.titre ?? '—'}</p>
+                        <p className="text-xs text-brun-doux mt-0.5">
+                          {locataire?.nom ?? 'Locataire'} · {formatDate(d.date_arrivee)} → {formatDate(d.date_depart)} ({d.nb_nuits} nuit{d.nb_nuits > 1 ? 's' : ''})
+                        </p>
+                        <p className="font-black text-primary-500 text-sm mt-0.5">{formatPrix(d.montant_total)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* Demandes refusées / expirées / annulées (propriétaire) */}
           {demandesProp.filter(d => ['refusee', 'expiree', 'annulee_locataire', 'annulee_systeme'].includes(d.statut)).length > 0 && (
             <div className="space-y-3">
@@ -694,6 +734,7 @@ export default function ReservationsPage() {
             titre="Réservations reçues"
             resas={resasProp}
             vue="proprietaire"
+            onConfirmerArrivee={confirmerArrivee}
             loadingId={loadingId}
           />
         </>

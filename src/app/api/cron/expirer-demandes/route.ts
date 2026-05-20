@@ -36,7 +36,7 @@ export async function POST(request: Request) {
           user_id: demande.proprietaire_id,
           type: 'demande_expiree_proprio',
           titre: 'Demande expirée',
-          corps: `Une demande de réservation pour "${titreBien}" a expiré car vous n'avez pas répondu dans les 12h.`,
+          corps: `Une demande de réservation pour "${titreBien}" a expiré car vous n'avez pas répondu dans les 48h.`,
           lien: `/mon-espace/reservations`,
         },
       ])

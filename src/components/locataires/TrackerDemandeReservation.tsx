@@ -165,7 +165,7 @@ export default function TrackerDemandeReservation({ demande, onStatutChange }: P
       {statut === 'expiree' && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
           <p className="text-sm font-semibold text-gray-600">Demande expirée</p>
-          <p className="text-xs text-gray-400 mt-0.5">Le délai de réponse de 12h est dépassé.</p>
+          <p className="text-xs text-gray-400 mt-0.5">Le délai de réponse de 48h est dépassé.</p>
         </div>
       )}
     </div>

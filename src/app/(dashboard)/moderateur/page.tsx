@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 import Link from 'next/link'
 import { Shield, Clock, CheckCircle, XCircle, Eye, ArrowRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
+import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -33,39 +34,42 @@ export default function DashboardModPage() {
   const [stats,   setStats]   = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadDashboard() }, [])
+  const loadDashboard = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [biensRes, statsRes, signalRes] = await Promise.all([
+        supabase
+          .from('biens')
+          .select('id, slug, titre, type_bien, ville, photos, created_at, proprietaire:profiles!owner_id(nom)')
+          .eq('statut', 'en_attente')
+          .eq('categorie', 'vente')
+          .order('created_at', { ascending: true })
+          .limit(10),
+        supabase.from('biens').select('statut', { count: 'exact' }).eq('categorie', 'vente'),
+        supabase.from('signalements').select('id', { count: 'exact' }).eq('traite', false),
+      ])
+      setBiens((biensRes.data as any) ?? [])
+      const all = statsRes.data ?? []
+      setStats({
+        enAttente:    all.filter((b: any) => b.statut === 'en_attente').length,
+        approuves:    all.filter((b: any) => b.statut === 'publie').length,
+        rejetes:      all.filter((b: any) => b.statut === 'rejete').length,
+        signalements: signalRes.count ?? 0,
+      })
+    } catch {
+      toast.error('Erreur de chargement')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadDashboard() }, [loadDashboard])
 
   useRealtimeRefresh(
     'moderateur-biens',
     [{ table: 'biens' }, { table: 'signalements' }],
     loadDashboard,
   )
-
-  const loadDashboard = async () => {
-    setLoading(true)
-    const [biensRes, statsRes, signalRes] = await Promise.all([
-      supabase
-        .from('biens')
-        .select('id, slug, titre, type_bien, ville, photos, created_at, proprietaire:profiles!owner_id(nom)')
-        .eq('statut', 'en_attente')
-        .eq('categorie', 'vente')
-        .order('created_at', { ascending: true })
-        .limit(10),
-      supabase.from('biens').select('statut', { count: 'exact' }).eq('categorie', 'vente'),
-      supabase.from('signalements').select('id', { count: 'exact' }).eq('traite', false),
-    ])
-
-    setBiens((biensRes.data as any) ?? [])
-
-    const all = statsRes.data ?? []
-    setStats({
-      enAttente:   all.filter((b: any) => b.statut === 'en_attente').length,
-      approuves:   all.filter((b: any) => b.statut === 'publie').length,
-      rejetes:     all.filter((b: any) => b.statut === 'rejete').length,
-      signalements: signalRes.count ?? 0,
-    })
-    setLoading(false)
-  }
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full pb-24 lg:pb-8">

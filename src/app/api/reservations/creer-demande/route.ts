@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     // Générer tokens uniques
     const token_confirmation = randomBytes(32).toString('hex')
     const token_refus        = randomBytes(32).toString('hex')
-    const delaiHeures        = is_urgent ? 2 : 12
+    const delaiHeures        = is_urgent ? 8 : 48
     const expire_at          = new Date(Date.now() + delaiHeures * 60 * 60 * 1000).toISOString()
 
     const { data: demande, error: demandeError } = await supabaseAdmin
@@ -93,11 +93,11 @@ export async function POST(request: Request) {
 
     // Notification au propriétaire
     const titreNotif = is_urgent
-      ? '🚨 URGENT — Demande de réservation (2h pour répondre)'
+      ? '🚨 URGENT — Demande de réservation (8h pour répondre)'
       : '🏠 Nouvelle demande de réservation'
     const corpsNotif = is_urgent
-      ? `⚡ DEMANDE URGENTE pour "${bien.titre}" — ${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}. Le locataire attend une réponse dans les 2h. Passé ce délai, la demande sera automatiquement annulée.`
-      : `Une demande pour "${bien.titre}" (${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}) attend votre réponse. Vous avez 12h pour confirmer ou refuser.`
+      ? `⚡ DEMANDE URGENTE pour "${bien.titre}" — ${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}. Le locataire attend une réponse dans les 8h. Passé ce délai, la demande sera automatiquement annulée.`
+      : `Une demande pour "${bien.titre}" (${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}) attend votre réponse. Vous avez 48h pour confirmer ou refuser.`
 
     await supabaseAdmin.from('notifications').insert({
       user_id: bien.owner_id,
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       type:    'demande_envoyee',
       titre:   is_urgent ? '⚡ Demande urgente envoyée' : 'Demande envoyée',
       corps:   is_urgent
-        ? `Votre demande urgente pour "${bien.titre}" a été envoyée. Le propriétaire a 2h pour répondre.`
+        ? `Votre demande urgente pour "${bien.titre}" a été envoyée. Le propriétaire a 8h pour répondre.`
         : `Votre demande pour "${bien.titre}" a été envoyée. Le propriétaire a jusqu'à ${new Date(expire_at).toLocaleString('fr-FR')} pour répondre.`,
       lien: `/reservations/demandes/${demande.id}`,
     })
