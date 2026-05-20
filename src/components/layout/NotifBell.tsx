@@ -20,16 +20,17 @@ export default function NotifBell() {
     if (!user?.id) return
     loadNotifs()
 
-    // Nom unique par mount : évite de récupérer un canal encore subscribed
-    // dans le registry SDK pendant que removeChannel() termine de façon async
+    const uid = user.id
+    const name = `notifs-${uid}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const channel = supabase
-      .channel(`notifs-${user.id}-${Date.now()}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        payload => setNotifs(prev => [payload.new as Notification, ...prev].slice(0, 20)))
+      .channel(name)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` },
+        payload => setNotifs(prev => [payload.new as Notification, ...prev].slice(0, 20)),
+      )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  // user?.id : évite les re-souscriptions sur refresh de token (même ID, nouvelle référence)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
