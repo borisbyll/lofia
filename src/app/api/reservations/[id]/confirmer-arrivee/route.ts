@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       .update({
         arrivee_confirmee: true,
         heure_arrivee_reelle: maintenant.toISOString(),
-        statut: 'en_cours',
+        statut: 'en_sejour',
         check_in_at: maintenant.toISOString(),
       })
       .eq('id', params.id)

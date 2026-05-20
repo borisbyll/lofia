@@ -591,8 +591,13 @@ export default function ReservationsPage() {
   const confirmerArrivee = async (id: string) => {
     setLoadingId(id)
     try {
-      const { error } = await supabase.rpc('confirmer_arrivee', { reservation_id: id })
-      if (error) throw error
+      const res = await fetch(`/api/reservations/${id}/confirmer-arrivee`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'locataire' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erreur')
       toast.success('Arrivée confirmée ! Les fonds seront libérés dans 24h.')
       load()
     } catch (err: any) {
