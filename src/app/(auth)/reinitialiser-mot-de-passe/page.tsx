@@ -19,10 +19,30 @@ export default function ReinitialiserMotDePassePage() {
   const [validSession, setValidSession] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setValidSession(!!session)
-      setChecking(false)
-    })
+    // Supabase envoie ?code=... (PKCE) dans l'URL après vérification du lien email
+    // On l'échange côté client pour que le browser client établisse lui-même la session
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ data, error }) => {
+          if (error || !data.session) {
+            setValidSession(false)
+          } else {
+            setValidSession(true)
+          }
+          setChecking(false)
+          // Retirer le code de l'URL sans recharger la page
+          window.history.replaceState({}, '', '/reinitialiser-mot-de-passe')
+        })
+    } else {
+      // Pas de code → vérifier si une session est déjà active
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setValidSession(!!session)
+        setChecking(false)
+      })
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +54,10 @@ export default function ReinitialiserMotDePassePage() {
     try {
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
+
       setDone(true)
+      // Déconnexion propre après le changement (la session recovery est invalide)
+      await supabase.auth.signOut()
       setTimeout(() => router.push('/connexion'), 3000)
     } catch (err: any) {
       toast.error(err.message ?? 'Erreur lors de la mise à jour')
@@ -77,10 +100,10 @@ export default function ReinitialiserMotDePassePage() {
               <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
               <h1 className="text-xl font-black text-gray-900 mb-2">Mot de passe mis à jour !</h1>
               <p className="text-sm text-brun-doux mb-6">
-                Vous allez être redirigé vers la connexion…
+                Redirection vers la connexion dans 3 secondes…
               </p>
               <Link href="/connexion" className="btn btn-primary w-full justify-center">
-                Se connecter
+                Se connecter maintenant
               </Link>
             </div>
           ) : (
