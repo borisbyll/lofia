@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -46,6 +47,12 @@ export default function MesBiensPage() {
     if (!user) return
     loadBiens()
   }, [user])
+
+  useRealtimeRefresh(
+    `mes-biens-${user?.id}`,
+    [{ table: 'biens', filter: user ? `owner_id=eq.${user.id}` : undefined }],
+    loadBiens,
+  )
 
   const loadBiens = async () => {
     setLoading(true)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 import Link from 'next/link'
 import {
   CalendarCheck, CheckCircle, Clock, XCircle,
@@ -532,6 +533,17 @@ export default function ReservationsPage() {
     if (!user) return
     load()
   }, [user])
+
+  useRealtimeRefresh(
+    `reservations-page-${user?.id}`,
+    [
+      { table: 'reservations',        filter: user ? `proprietaire_id=eq.${user.id}` : undefined },
+      { table: 'reservations',        filter: user ? `locataire_id=eq.${user.id}`    : undefined },
+      { table: 'demandes_reservation', filter: user ? `proprietaire_id=eq.${user.id}` : undefined },
+      { table: 'demandes_reservation', filter: user ? `locataire_id=eq.${user.id}`    : undefined },
+    ],
+    load,
+  )
 
   const load = async () => {
     setLoading(true)

@@ -39,7 +39,14 @@ export default function ContratListeClient() {
       }
     }
     load()
-    return () => { cancelled = true }
+
+    const col = mode === 'proprietaire' ? 'proprietaire_id' : 'locataire_id'
+    const ch = supabase
+      .channel(`contrats-${user.id}-${mode}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contrats_location', filter: `${col}=eq.${user.id}` } as any, () => load())
+      .subscribe()
+
+    return () => { cancelled = true; supabase.removeChannel(ch) }
   }, [mode, user])
 
   const roleLabel = mode === 'proprietaire' ? 'Propriétaire' : 'Locataire'

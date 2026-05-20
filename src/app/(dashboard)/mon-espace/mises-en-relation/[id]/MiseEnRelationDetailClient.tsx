@@ -7,6 +7,7 @@ import { formatPrix, formatDate } from '@/lib/utils'
 import { CheckCircle, Clock, ArrowLeft, Calendar, FileText, Home, User, Phone } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDashboardMode } from '@/store/dashboardModeStore'
+import { supabase } from '@/lib/supabase/client'
 
 export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { mer: any; contrat: any; userId: string }) {
   const router = useRouter()
@@ -25,6 +26,15 @@ export default function MiseEnRelationDetailClient({ mer, contrat, userId }: { m
   const isProprietaire = mer.proprietaire_id === userId
 
   const expectedMode = isProprietaire ? 'proprietaire' : 'locataire'
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`mer-${mer.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mises_en_relation', filter: `id=eq.${mer.id}` } as any, () => router.refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contrats_location', filter: `mise_en_relation_id=eq.${mer.id}` } as any, () => router.refresh())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [mer.id, router])
 
   useEffect(() => {
     setMode(expectedMode)

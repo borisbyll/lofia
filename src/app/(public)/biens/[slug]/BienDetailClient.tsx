@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   MapPin, BedDouble, Bath, Maximize2, Eye, Heart,
   MessageSquare, Share2, ShieldCheck, Star,
@@ -37,6 +38,7 @@ interface Props {
 
 export default function BienDetailClient({ bien, avis, similaires }: Props) {
   const { user, loading: authLoading } = useAuthStore()
+  const router = useRouter()
 
   const [imgIdx, setImgIdx] = useState(0)
   const [showSignalement, setShowSignalement] = useState(false)
@@ -51,6 +53,15 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
     supabase.rpc('increment_vues', { p_bien_id: bien.id })
       .then(({ error }) => { if (error) console.error('[vues]', error.message, error.code) })
   }, [bien.id])
+
+  // Rafraîchir la page (calendrier + données) quand les disponibilités changent
+  useEffect(() => {
+    const ch = supabase
+      .channel(`dispo-bien-${bien.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disponibilites', filter: `bien_id=eq.${bien.id}` } as any, () => router.refresh())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [bien.id, router])
 
   const photos = useMemo(
     () => [bien.photo_principale, ...(bien.photos || [])].filter(Boolean) as string[],

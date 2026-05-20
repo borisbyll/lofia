@@ -7,6 +7,7 @@ import { ArrowLeft, Building2, Phone, User, Calendar, FileText } from 'lucide-re
 import { formatPrix, formatDate } from '@/lib/utils'
 import { useDashboardMode } from '@/store/dashboardModeStore'
 import ProcessTracker, { ETAPES_VENTE } from '@/components/ProcessTracker'
+import { supabase } from '@/lib/supabase/client'
 
 interface Props { dossier: any; userId: string }
 
@@ -24,6 +25,14 @@ export default function DossierVenteUserClient({ dossier, userId }: Props) {
   const expectedMode = isVendeur ? 'proprietaire' : 'locataire'
 
   useEffect(() => { setMode(expectedMode) }, [expectedMode, setMode])
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`dossier-vente-${dossier.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dossiers_vente', filter: `id=eq.${dossier.id}` } as any, () => router.refresh())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [dossier.id, router])
 
   useEffect(() => {
     const prev = prevModeRef.current

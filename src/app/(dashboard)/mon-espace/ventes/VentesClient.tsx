@@ -40,6 +40,14 @@ export default function VentesClient({ userId }: { userId: string }) {
       setLoading(false)
     }
     load()
+
+    const ch = supabase
+      .channel(`ventes-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dossiers_vente', filter: `acheteur_id=eq.${userId}` } as any, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dossiers_vente', filter: `vendeur_id=eq.${userId}` } as any, () => load())
+      .subscribe()
+
+    return () => { supabase.removeChannel(ch) }
   }, [userId])
 
   if (loading) return (

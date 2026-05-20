@@ -5,6 +5,7 @@ import { formatPrix, formatDate } from '@/lib/utils'
 import { CheckCircle, Clock, Download, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDashboardMode } from '@/store/dashboardModeStore'
+import { supabase } from '@/lib/supabase/client'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://lofia.vercel.app'
 
@@ -21,6 +22,14 @@ export default function PromesseDetailClient({ promesse, userId }: { promesse: a
   useEffect(() => {
     setMode(expectedMode)
   }, [expectedMode, setMode])
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`promesse-${promesse.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'promesses_vente', filter: `id=eq.${promesse.id}` } as any, () => router.refresh())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [promesse.id, router])
 
   useEffect(() => {
     const prev = prevModeRef.current

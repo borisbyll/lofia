@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh'
 import Link from 'next/link'
 import { Shield, Clock, CheckCircle, XCircle, Eye, ArrowRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
@@ -33,6 +34,12 @@ export default function DashboardModPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadDashboard() }, [])
+
+  useRealtimeRefresh(
+    'moderateur-biens',
+    [{ table: 'biens' }, { table: 'signalements' }],
+    loadDashboard,
+  )
 
   const loadDashboard = async () => {
     setLoading(true)
