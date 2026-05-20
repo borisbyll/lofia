@@ -35,24 +35,23 @@ export async function POST(request: Request) {
         amount:       contrat.frais_dossier,
         currency:     { iso: 'XOF' },
         callback_url: `${APP_URL}/mon-espace/contrats/${contrat_id}`,
-        customer:     { firstname: (profil as any)?.nom ?? 'Propriétaire', phone_number: { number: (profil as any)?.phone ?? '', country: 'TG' } },
+        customer:     Object.assign({ firstname: (profil as any)?.nom ?? 'Propriétaire' }, (profil as any)?.phone ? { phone_number: { number: String((profil as any).phone), country: 'TG' } } : {}),
         metadata:     { type: 'frais_dossier_longue_duree', contrat_id },
       }),
     })
 
     if (!fedaRes.ok) return NextResponse.json({ error: 'Erreur création paiement' }, { status: 502 })
 
-    const fedaData = await fedaRes.json()
-    const txn      = fedaData.v1?.transaction ?? fedaData.v1 ?? fedaData
-    const token    = txn?.token
-    if (!token) {
-      console.error('[payer-frais-dossier] Token manquant dans réponse FedaPay:', JSON.stringify(fedaData))
+    const fedaData   = await fedaRes.json()
+    const txn        = fedaData?.['v1/transaction'] ?? fedaData?.v1?.transaction ?? fedaData?.transaction
+    const txId       = String(txn?.id ?? '')
+    const paiementUrl = txn?.payment_url ?? null
+    if (!paiementUrl) {
+      console.error('[payer-frais-dossier] payment_url manquant:', JSON.stringify(fedaData))
       return NextResponse.json({ error: 'Impossible de créer le paiement FedaPay' }, { status: 502 })
     }
-    const checkoutBase = FEDAPAY_BASE.replace('sandbox-api', 'sandbox-checkout').replace('//api.', '//checkout.')
-    const paiementUrl  = `${checkoutBase}/payment-page/${token}`
 
-    await supabaseAdmin.from('contrats_location').update({ fedapay_frais_dossier_id: String(txn?.id ?? '') }).eq('id', contrat_id)
+    await supabaseAdmin.from('contrats_location').update({ fedapay_frais_dossier_id: txId }).eq('id', contrat_id)
 
     return NextResponse.json({ success: true, paiement_url: paiementUrl })
   } catch (err) {

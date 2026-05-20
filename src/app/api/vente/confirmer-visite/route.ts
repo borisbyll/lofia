@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+
 const APP_URL = process.env.APP_URL ?? 'https://lofia.vercel.app'
 
 export async function GET(request: Request) {

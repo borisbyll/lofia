@@ -20,10 +20,7 @@ export default async function PayerDemandePage({ params }: Props) {
   if (demande.locataire_id !== session.user.id) notFound()
   if (demande.statut !== 'confirmee') redirect(`/reservations/demandes/${params.id}`)
 
-  // Vérifier expiration
-  if (demande.lien_paiement_expire_at && new Date(demande.lien_paiement_expire_at) < new Date()) {
-    redirect(`/reservations/demandes/${params.id}`)
-  }
+  // Ne pas rediriger si expiré — le client affiche les options (renouveler / annuler)
 
   return <PayerDemandeClient demande={demande} />
 }

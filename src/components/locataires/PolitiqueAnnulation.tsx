@@ -23,13 +23,15 @@ export default function PolitiqueAnnulation({
   commissionLofia,
   montantProprietaire,
 }: Props) {
-  const [maintenant, setMaintenant] = useState(new Date())
+  const [maintenant, setMaintenant] = useState<Date | null>(null)
 
-  // Mise à jour chaque minute
   useEffect(() => {
+    setMaintenant(new Date())
     const timer = setInterval(() => setMaintenant(new Date()), 60_000)
     return () => clearInterval(timer)
   }, [])
+
+  if (!maintenant) return null
 
   const dateArr = new Date(dateArrivee)
   const dateResa = new Date(dateReservation)

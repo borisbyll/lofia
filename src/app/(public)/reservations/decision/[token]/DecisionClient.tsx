@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Loader2, Clock, Home, AlertTriangle } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Clock, Home, AlertTriangle, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { LogoLofia } from '@/components/lofia/LogoLofia'
@@ -18,6 +18,7 @@ interface Props {
     montant_total: number
     message_locataire: string | null
     expire_at: string
+    is_urgent?: boolean
     token_confirmation: string
     token_refus: string
     bien: { id: string; titre: string; photos: string[]; photo_principale: string | null; ville: string; quartier: string | null }
@@ -34,7 +35,8 @@ export default function DecisionClient({ demande, token, isConfirmToken }: Props
   const [decision, setDecision] = useState<'confirmee' | 'refusee' | null>(null)
   const [motif,    setMotif]    = useState('')
 
-  const expired  = new Date(demande.expire_at) < new Date()
+  const [expired, setExpired] = useState(false)
+  useEffect(() => { setExpired(new Date(demande.expire_at) < new Date()) }, [demande.expire_at])
   const isActive = demande.statut === 'en_attente'
   const photo    = demande.bien.photo_principale ?? demande.bien.photos?.[0]
 
@@ -73,6 +75,20 @@ export default function DecisionClient({ demande, token, isConfirmToken }: Props
       </Link>
 
       <div className="w-full max-w-md">
+
+        {/* Bandeau urgence */}
+        {demande.is_urgent && (
+          <div className="bg-orange-500 rounded-2xl px-4 py-3 mb-4 flex items-start gap-3">
+            <Zap size={20} className="text-white shrink-0 mt-0.5" />
+            <div>
+              <p className="text-white font-black text-sm">⚡ DEMANDE URGENTE</p>
+              <p className="text-orange-100 text-xs mt-0.5">
+                Le locataire attend une réponse dans les 2h. Passé ce délai, la demande sera automatiquement annulée et les dates seront libérées.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Bien */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
           {photo && (
@@ -147,7 +163,7 @@ export default function DecisionClient({ demande, token, isConfirmToken }: Props
           <div className="bg-amber-50 rounded-2xl border border-amber-100 p-6 text-center">
             <Clock size={36} className="text-amber-400 mx-auto mb-3" />
             <h2 className="font-bold text-amber-800 mb-1">Demande expirée</h2>
-            <p className="text-sm text-amber-700">Le délai de réponse de 12h est dépassé. La demande a été annulée automatiquement.</p>
+            <p className="text-sm text-amber-700">Le délai de réponse {demande.is_urgent ? 'de 2h (urgence)' : 'de 12h'} est dépassé. La demande a été annulée automatiquement.</p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">

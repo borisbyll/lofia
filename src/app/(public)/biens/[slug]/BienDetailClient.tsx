@@ -377,7 +377,7 @@ export default function BienDetailClient({ bien, avis, similaires }: Props) {
 
             {/* Sidebar desktop */}
             <div className="hidden lg:block">
-              <div className="sticky top-24 space-y-4">
+              <div className="sticky top-24 space-y-4 max-h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar">
                 <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
                   <PropriétaireCard bien={bien} onContact={handleContact} showContact={isCourte} />
                 </div>

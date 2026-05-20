@@ -31,8 +31,9 @@ interface FormData {
   nb_chambres:  string
   nb_salles_bain: string
   nb_etages:    string
-  meuble:       boolean
-  equipements:  string[]
+  meuble:           boolean
+  mode_reservation: 'sur_demande' | 'instantanee'
+  equipements:      string[]
   // Étape 3 — Localisation
   ville:        string
   commune:      string
@@ -49,7 +50,7 @@ interface FormData {
 const initForm: FormData = {
   categorie: '', type_bien: '', type_location: '', titre: '',
   description: '', prix: '', prix_type: 'total', prix_negociable: false,
-  superficie: '', nb_salons: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '', meuble: false, equipements: [],
+  superficie: '', nb_salons: '', nb_chambres: '', nb_salles_bain: '', nb_etages: '', meuble: false, mode_reservation: 'sur_demande', equipements: [],
   ville: '', commune: '', adresse: '', quartier: '', lat: '', lng: '',
   photos: [], photoUrls: [], videoFile: null,
 }
@@ -255,6 +256,7 @@ export default function PublierBienPage() {
         photo_principale: uploadedUrls[0] || null,
         video_url:        videoUrl,
         meuble:           form.meuble,
+        mode_reservation: form.type_location === 'courte_duree' ? form.mode_reservation : 'sur_demande',
         equipements:      form.equipements,
       }
 
@@ -531,6 +533,37 @@ export default function PublierBienPage() {
               </label>
             )}
 
+            {/* Mode de réservation — courte durée uniquement */}
+            {form.type_location === 'courte_duree' && (
+              <div>
+                <label className="label-field">Mode de réservation</label>
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  {(['sur_demande', 'instantanee'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => set('mode_reservation', mode)}
+                      className={cn(
+                        'p-3 rounded-xl border-2 text-sm font-bold text-left transition-all',
+                        form.mode_reservation === mode
+                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      )}
+                    >
+                      <span className="block">
+                        {mode === 'sur_demande' ? '📩 Sur demande' : '⚡ Instantanée'}
+                      </span>
+                      <span className="block text-[10px] font-normal mt-0.5 text-gray-400">
+                        {mode === 'sur_demande'
+                          ? 'Vous confirmez avant tout paiement'
+                          : 'Paiement direct sans votre validation'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Équipements */}
             <div>
               <label className="label-field mb-3">Équipements & services</label>
@@ -753,6 +786,14 @@ export default function PublierBienPage() {
                 <div className="flex justify-between text-gray-600">
                   <span>Meublé</span>
                   <span className="font-semibold">{form.meuble ? 'Oui' : 'Non'}</span>
+                </div>
+              )}
+              {form.type_location === 'courte_duree' && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Réservation</span>
+                  <span className="font-semibold">
+                    {form.mode_reservation === 'instantanee' ? '⚡ Instantanée' : '📩 Sur demande'}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between text-gray-600">

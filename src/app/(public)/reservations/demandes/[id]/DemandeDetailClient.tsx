@@ -90,11 +90,13 @@ export default function DemandeDetailClient({ demande: initial }: Props) {
         )}
 
         {/* Timer paiement si confirmée */}
-        {statut === 'confirmee' && initial.lien_paiement_expire_at && (
+        {statut === 'confirmee' && (
           <div className="bg-white rounded-2xl border border-green-100 shadow-sm p-4 space-y-3">
             <div>
               <p className="text-sm font-semibold text-green-800 mb-1">🎉 Confirmée — Payez maintenant !</p>
-              <TimerExpiration expire_at={initial.lien_paiement_expire_at} label="Lien expire dans" />
+              {initial.lien_paiement_expire_at && (
+                <TimerExpiration expire_at={initial.lien_paiement_expire_at} label="Lien expire dans" />
+              )}
             </div>
             <button
               onClick={() => router.push(`/reservations/payer/${initial.id}`)}

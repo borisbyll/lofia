@@ -27,7 +27,7 @@ export default function CalendrierDisponibilite({ bienId, prixNuit = 0, readOnly
   const [periodes, setPeriodes] = useState<Periode[]>([])
   const [loading,  setLoading] = useState(true)
 
-  // Charger disponibilités depuis les deux sources
+  // Charger disponibilités depuis les trois sources
   useEffect(() => {
     const load = async () => {
       setLoading(true)
@@ -52,9 +52,20 @@ export default function CalendrierDisponibilite({ bienId, prixNuit = 0, readOnly
         .lt('date_debut', finPeriode)
         .gt('date_fin',   debutPeriode)
 
+      // 3. Demandes de réservation actives (en_attente = proprio pas encore répondu,
+      //    confirmee = locataire n'a pas encore payé) — libérées automatiquement si annulée
+      const { data: demandes } = await supabase
+        .from('demandes_reservation')
+        .select('date_arrivee, date_depart')
+        .eq('bien_id', bienId)
+        .in('statut', ['en_attente', 'confirmee'])
+        .lt('date_arrivee', finPeriode)
+        .gt('date_depart',  debutPeriode)
+
       const resultat: Periode[] = [
-        ...(dispo ?? []).map(d => ({ debut: d.date_debut, fin: d.date_fin, type: d.type as Periode['type'] })),
-        ...(enAttente ?? []).map(r => ({ debut: r.date_debut, fin: r.date_fin, type: 'en_attente' as const })),
+        ...(dispo    ?? []).map(d => ({ debut: d.date_debut,   fin: d.date_fin,   type: d.type as Periode['type'] })),
+        ...(enAttente ?? []).map(r => ({ debut: r.date_debut,  fin: r.date_fin,   type: 'en_attente' as const })),
+        ...(demandes  ?? []).map(d => ({ debut: d.date_arrivee, fin: d.date_depart, type: 'en_attente' as const })),
       ]
       setPeriodes(resultat)
       setLoading(false)
@@ -117,39 +128,41 @@ export default function CalendrierDisponibilite({ bienId, prixNuit = 0, readOnly
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-primary-50 p-4">
+    <div className="rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
       {/* Navigation mois */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1.5">
         <button
           onClick={prev}
           disabled={!canPrev}
-          className="p-1.5 rounded-lg hover:bg-primary-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-5 h-5 rounded-md flex items-center justify-center hover:bg-primary-50 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
           aria-label="Mois précédent"
         >
-          <ChevronLeft size={18} style={{ color: '#8B1A2E' }} />
+          <ChevronLeft size={11} style={{ color: '#8B1A2E' }} />
         </button>
-        <span className="font-bold text-sm" style={{ color: '#1a0a00' }}>{MOIS_FR[mois]} {annee}</span>
-        <button onClick={next} className="p-1.5 rounded-lg hover:bg-primary-50 transition-colors" aria-label="Mois suivant">
-          <ChevronRight size={18} style={{ color: '#8B1A2E' }} />
+        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#1a0a00' }}>
+          {MOIS_FR[mois]} {annee}
+        </span>
+        <button onClick={next} className="w-5 h-5 rounded-md flex items-center justify-center hover:bg-primary-50 transition-colors" aria-label="Mois suivant">
+          <ChevronRight size={11} style={{ color: '#8B1A2E' }} />
         </button>
       </div>
 
       {/* Jours de la semaine */}
-      <div className="grid grid-cols-7 mb-2">
+      <div className="grid grid-cols-7 mb-0.5">
         {JOURS_FR.map(j => (
-          <div key={j} className="text-center text-[10px] font-bold py-1" style={{ color: '#7a5c3a' }}>{j}</div>
+          <div key={j} className="text-center text-[7px] font-semibold py-0.5 tracking-widest uppercase" style={{ color: '#b09880' }}>{j}</div>
         ))}
       </div>
 
       {/* Grille jours */}
       {loading ? (
-        <div className="grid grid-cols-7 gap-0.5">
+        <div className="grid grid-cols-7 gap-[2px]">
           {Array(35).fill(null).map((_, i) => (
-            <div key={i} className="h-8 rounded-lg skeleton" />
+            <div key={i} className="h-5 rounded-md skeleton" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-0.5">
+        <div className="grid grid-cols-7 gap-[2px]">
           {jours.map((date, i) => {
             if (!date) return <div key={`e-${i}`} />
             const typeJour = getTypeJour(date)
@@ -166,17 +179,17 @@ export default function CalendrierDisponibilite({ bienId, prixNuit = 0, readOnly
                 onMouseEnter={() => !readOnly && debut && !fin && setHover(date)}
                 onMouseLeave={() => setHover(null)}
                 disabled={bloque || readOnly}
-                title={typeJour === 'en_attente' ? 'Réservation en attente de paiement' : typeJour === 'reserve' ? 'Déjà réservé' : typeJour === 'bloque' ? 'Indisponible' : ''}
+                title={typeJour === 'en_attente' ? 'En attente' : typeJour === 'reserve' ? 'Réservé' : typeJour === 'bloque' ? 'Indisponible' : ''}
                 className={cn(
-                  'h-8 w-full rounded-lg text-xs font-semibold transition-all',
-                  typeJour === 'reserve'    ? 'line-through text-gray-300 cursor-not-allowed bg-gray-50' :
-                  typeJour === 'en_attente' ? 'line-through text-orange-300 cursor-not-allowed bg-orange-50' :
-                  typeJour === 'bloque'     ? 'line-through text-gray-300 cursor-not-allowed bg-gray-50' :
-                  (isDebut || isFin) ? 'bg-primary-500 text-white' :
-                  inRange   ? 'bg-primary-100 text-primary-700' :
-                  isToday   ? 'border border-primary-300 text-primary-600' :
-                  readOnly  ? 'text-gray-700' :
-                  'hover:bg-primary-50 text-gray-700'
+                  'h-5 w-full rounded-md text-[9px] font-medium transition-all leading-none',
+                  typeJour === 'reserve'    ? 'text-gray-200 cursor-not-allowed bg-gray-50/80 line-through' :
+                  typeJour === 'en_attente' ? 'text-orange-200 cursor-not-allowed bg-orange-50/60 line-through' :
+                  typeJour === 'bloque'     ? 'text-gray-200 cursor-not-allowed bg-gray-50/80 line-through' :
+                  (isDebut || isFin)        ? 'bg-primary-500 text-white shadow-sm font-semibold' :
+                  inRange   ? 'bg-primary-50 text-primary-600' :
+                  isToday   ? 'ring-1 ring-primary-300 text-primary-500 font-semibold' :
+                  readOnly  ? 'text-gray-600 hover:bg-gray-50' :
+                  'text-gray-700 hover:bg-primary-50 hover:text-primary-600'
                 )}
               >
                 {date.getDate()}
@@ -187,11 +200,10 @@ export default function CalendrierDisponibilite({ bienId, prixNuit = 0, readOnly
       )}
 
       {/* Légende */}
-      <div className="flex flex-wrap items-center gap-3 mt-4 text-[10px]" style={{ color: '#7a5c3a' }}>
-        {!readOnly && <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-primary-500" />Sélection</div>}
-        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-gray-200" />Réservé</div>
-        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-orange-100" />En attente</div>
-        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm border border-primary-300" />Aujourd&apos;hui</div>
+      <div className="flex items-center gap-2 mt-1.5 text-[7px] flex-wrap" style={{ color: '#b09880' }}>
+        {!readOnly && <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-sm bg-primary-500" />Sélection</div>}
+        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-sm bg-gray-200" />Réservé</div>
+        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-sm bg-orange-100" />En attente</div>
       </div>
     </div>
   )

@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         amount: formule.prix,
         currency: { iso: 'XOF' },
         callback_url: `${APP_URL}/mon-espace/mes-biens/${bien_id}/sponsoriser?success=true`,
-        customer: { firstname: (profil as any)?.nom ?? '', phone_number: { number: (profil as any)?.phone ?? '', country: 'TG' } },
+        customer: Object.assign({ firstname: (profil as any)?.nom || 'Client' }, (profil as any)?.phone ? { phone_number: { number: String((profil as any).phone), country: 'TG' } } : {}),
         metadata: { type: 'sponsoring', bien_id, formule_id, user_id: user.id },
       }),
     })
@@ -46,14 +46,8 @@ export async function POST(request: Request) {
     }
 
     const fedData = await fedRes.json()
-    const transaction = fedData.v1?.transaction ?? fedData.transaction
-
-    const tokenRes = await fetch(`${fedapayUrl}/transactions/${transaction.id}/token`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${FEDAPAY_SECRET}` },
-    })
-    const tokenData = await tokenRes.json()
-    const paiementUrl = tokenData.v1?.token?.token ? `https://checkout.fedapay.com/${tokenData.v1.token.token}` : null
+    const transaction = fedData?.['v1/transaction'] ?? fedData?.v1?.transaction ?? fedData?.transaction
+    const paiementUrl = transaction?.payment_url ?? null
 
     const dateDebut = new Date()
     const dateFin   = new Date(dateDebut.getTime() + formule.duree_jours * 86400000)
@@ -65,7 +59,7 @@ export async function POST(request: Request) {
       montant: formule.prix,
       date_debut: dateDebut.toISOString(),
       date_fin: dateFin.toISOString(),
-      fedapay_transaction_id: String(transaction.id),
+      fedapay_transaction_id: String(transaction?.id ?? ''),
       statut: 'en_attente',
     }).select().single()
 

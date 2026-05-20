@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
     const body = await request.json()
-    const { bien_id, date_arrivee, date_depart, message } = body
+    const { bien_id, date_arrivee, date_depart, message, is_urgent } = body
 
     if (!bien_id || !date_arrivee || !date_depart) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
@@ -65,14 +65,15 @@ export async function POST(request: Request) {
 
     // Générer tokens uniques
     const token_confirmation = randomBytes(32).toString('hex')
-    const token_refus = randomBytes(32).toString('hex')
-    const expire_at = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString()
+    const token_refus        = randomBytes(32).toString('hex')
+    const delaiHeures        = is_urgent ? 2 : 12
+    const expire_at          = new Date(Date.now() + delaiHeures * 60 * 60 * 1000).toISOString()
 
     const { data: demande, error: demandeError } = await supabaseAdmin
       .from('demandes_reservation')
       .insert({
         bien_id,
-        locataire_id: session.user.id,
+        locataire_id:    session.user.id,
         proprietaire_id: bien.owner_id,
         date_arrivee,
         date_depart,
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
         token_confirmation,
         token_refus,
         expire_at,
+        is_urgent:        !!is_urgent,
         message_locataire: message?.trim() || null,
         statut: 'en_attente',
       })
@@ -89,21 +91,30 @@ export async function POST(request: Request) {
 
     if (demandeError) throw demandeError
 
-    // Notification in-app au propriétaire avec lien de décision tokenisé
+    // Notification au propriétaire
+    const titreNotif = is_urgent
+      ? '🚨 URGENT — Demande de réservation (2h pour répondre)'
+      : '🏠 Nouvelle demande de réservation'
+    const corpsNotif = is_urgent
+      ? `⚡ DEMANDE URGENTE pour "${bien.titre}" — ${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}. Le locataire attend une réponse dans les 2h. Passé ce délai, la demande sera automatiquement annulée.`
+      : `Une demande pour "${bien.titre}" (${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}) attend votre réponse. Vous avez 12h pour confirmer ou refuser.`
+
     await supabaseAdmin.from('notifications').insert({
       user_id: bien.owner_id,
-      type: 'demande_reservation',
-      titre: '🏠 Nouvelle demande de réservation',
-      corps: `Une demande pour "${bien.titre}" (${nb_nuits} nuit${nb_nuits > 1 ? 's' : ''}, du ${date_arrivee} au ${date_depart}) attend votre réponse. Vous avez 12h pour confirmer ou refuser.`,
-      lien: `/reservations/decision/${token_confirmation}`,
+      type:    is_urgent ? 'demande_urgente' : 'demande_reservation',
+      titre:   titreNotif,
+      corps:   corpsNotif,
+      lien:    `/reservations/decision/${token_confirmation}`,
     })
 
-    // Notification in-app au locataire
+    // Notification au locataire
     await supabaseAdmin.from('notifications').insert({
       user_id: session.user.id,
-      type: 'demande_envoyee',
-      titre: 'Demande envoyée',
-      corps: `Votre demande pour "${bien.titre}" a été envoyée. Le propriétaire a jusqu'à ${new Date(expire_at).toLocaleString('fr-FR')} pour répondre.`,
+      type:    'demande_envoyee',
+      titre:   is_urgent ? '⚡ Demande urgente envoyée' : 'Demande envoyée',
+      corps:   is_urgent
+        ? `Votre demande urgente pour "${bien.titre}" a été envoyée. Le propriétaire a 2h pour répondre.`
+        : `Votre demande pour "${bien.titre}" a été envoyée. Le propriétaire a jusqu'à ${new Date(expire_at).toLocaleString('fr-FR')} pour répondre.`,
       lien: `/reservations/demandes/${demande.id}`,
     })
 

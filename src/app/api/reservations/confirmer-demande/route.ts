@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+
 // CDC v2 §1.2 Étape 3 — Confirmation par le propriétaire via token (sans connexion)
 export async function GET(request: Request) {
   try {
@@ -41,10 +43,20 @@ export async function GET(request: Request) {
 
     const lien_paiement_expire_at = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
 
-    await supabaseAdmin
+    // Tenter la mise à jour avec lien_paiement_expire_at ; si la colonne n'existe pas, fallback sans elle
+    const { error: updateErr } = await supabaseAdmin
       .from('demandes_reservation')
       .update({ statut: 'confirmee', lien_paiement_expire_at })
       .eq('id', demande.id)
+
+    if (updateErr) {
+      console.warn('[confirmer-demande] update avec lien_paiement_expire_at échoué, fallback sans:', updateErr.message)
+      const { error: fallbackErr } = await supabaseAdmin
+        .from('demandes_reservation')
+        .update({ statut: 'confirmee' })
+        .eq('id', demande.id)
+      if (fallbackErr) throw fallbackErr
+    }
 
     const bien = Array.isArray(demande.biens) ? demande.biens[0] : demande.biens as { titre?: string } | null
     const titreBien = (bien as { titre?: string } | null)?.titre ?? 'votre hébergement'

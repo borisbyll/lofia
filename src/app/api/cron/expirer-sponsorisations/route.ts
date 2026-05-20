@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   const secret = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret')
   if (secret !== process.env.CRON_SECRET) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })

@@ -22,6 +22,8 @@ export default function EditBienPage() {
     adresse: '', quartier: '', meuble: false, prix_negociable: false,
     surface: '', nb_salons: '', nb_chambres: '', nb_sdb: '',
     equipements: [] as string[], video_url: '',
+    type_location: '' as 'courte_duree' | 'longue_duree' | '',
+    mode_reservation: 'sur_demande' as 'sur_demande' | 'instantanee',
   })
   const [photos, setPhotos] = useState<string[]>([])
   const [newPhotos, setNewPhotos] = useState<File[]>([])
@@ -34,7 +36,7 @@ export default function EditBienPage() {
   const loadBien = async () => {
     const { data, error } = await supabase
       .from('biens')
-      .select('id, titre, description, prix, ville, commune, adresse, quartier, prix_negociable, superficie, nb_salons, nb_chambres, nb_salles_bain, equipements, photos, photo_principale')
+      .select('id, titre, description, prix, ville, commune, adresse, quartier, prix_negociable, superficie, nb_salons, nb_chambres, nb_salles_bain, equipements, photos, photo_principale, type_location, mode_reservation')
       .eq('id', bienId)
       .eq('owner_id', user!.id)
       .single()
@@ -57,6 +59,8 @@ export default function EditBienPage() {
       nb_sdb:        String(data.nb_salles_bain ?? ''),
       equipements:   data.equipements ?? [],
       video_url:     '',
+      type_location: (data.type_location ?? '') as 'courte_duree' | 'longue_duree' | '',
+      mode_reservation: (data.mode_reservation ?? 'sur_demande') as 'sur_demande' | 'instantanee',
     })
     setPhotos(data.photos ?? [])
     setLoading(false)
@@ -97,8 +101,9 @@ export default function EditBienPage() {
         commune:     form.commune || null,
         adresse:     form.adresse.trim(),
         quartier:    form.quartier || null,
-        meuble:      form.meuble,
-        prix_negociable: form.prix_negociable,
+        meuble:           form.meuble,
+        mode_reservation: form.type_location === 'courte_duree' ? form.mode_reservation : 'sur_demande',
+        prix_negociable:  form.prix_negociable,
         superficie:    form.surface ? Number(form.surface) : null,
         nb_salons:     form.nb_salons ? Number(form.nb_salons) : null,
         nb_chambres:   form.nb_chambres ? Number(form.nb_chambres) : null,
@@ -188,6 +193,37 @@ export default function EditBienPage() {
               Prix négociable
             </label>
           </div>
+
+          {/* Mode réservation — courte durée uniquement */}
+          {form.type_location === 'courte_duree' && (
+            <div>
+              <label className="label-field">Mode de réservation</label>
+              <div className="grid grid-cols-2 gap-3 mt-1">
+                {(['sur_demande', 'instantanee'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => set('mode_reservation', mode)}
+                    className={cn(
+                      'p-3 rounded-xl border-2 text-sm font-bold text-left transition-all',
+                      form.mode_reservation === mode
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    )}
+                  >
+                    <span className="block">
+                      {mode === 'sur_demande' ? '📩 Sur demande' : '⚡ Instantanée'}
+                    </span>
+                    <span className="block text-[10px] font-normal mt-0.5 text-gray-400">
+                      {mode === 'sur_demande'
+                        ? 'Vous confirmez avant tout paiement'
+                        : 'Paiement direct sans votre validation'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Localisation */}

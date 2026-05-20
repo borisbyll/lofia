@@ -43,10 +43,11 @@ function formatTimer(ms: number): string {
 
 export default function TrackerDemandeReservation({ demande, onStatutChange }: Props) {
   const [statut, setStatut] = useState(demande.statut)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState<number | null>(null)
 
   // Mise à jour toutes les secondes pour le timer
   useEffect(() => {
+    setNow(Date.now())
     const interval = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(interval)
   }, [])
@@ -70,8 +71,8 @@ export default function TrackerDemandeReservation({ demande, onStatutChange }: P
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demande.id])
 
-  const expireMs = new Date(demande.expire_at).getTime() - now
-  const paiementMs = demande.lien_paiement_expire_at
+  const expireMs = now !== null ? new Date(demande.expire_at).getTime() - now : null
+  const paiementMs = now !== null && demande.lien_paiement_expire_at
     ? new Date(demande.lien_paiement_expire_at).getTime() - now
     : null
 
@@ -120,7 +121,7 @@ export default function TrackerDemandeReservation({ demande, onStatutChange }: P
       </div>
 
       {/* Statut actuel */}
-      {statut === 'en_attente' && expireMs > 0 && (
+      {statut === 'en_attente' && expireMs !== null && expireMs > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
           <p className="text-sm font-semibold text-amber-800">⏰ En attente de confirmation</p>
           <p className="text-xs text-amber-600 mt-0.5">

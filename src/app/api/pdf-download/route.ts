@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+
 // Extrait le chemin du fichier depuis une URL Supabase Storage
 // ex: https://xxx.supabase.co/storage/v1/object/public/contrats/a/b/file.pdf → a/b/file.pdf
 function extractPath(url: string, bucket: string): string | null {

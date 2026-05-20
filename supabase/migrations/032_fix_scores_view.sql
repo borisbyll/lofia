@@ -2,9 +2,18 @@
 -- + renommage VIEW + colonnes supplémentaires sur reservations
 -- CDC v2 corrections
 
--- 1. Renommer reservations_honorees → sejours_honores
-ALTER TABLE scores_locataires
-  RENAME COLUMN reservations_honorees TO sejours_honores;
+-- 1. Renommer reservations_honorees → sejours_honores (guard : colonne peut déjà avoir le bon nom)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'scores_locataires'
+      AND column_name  = 'reservations_honorees'
+  ) THEN
+    ALTER TABLE scores_locataires RENAME COLUMN reservations_honorees TO sejours_honores;
+  END IF;
+END $$;
 
 -- 2. Ajouter email_blackliste si absent
 ALTER TABLE scores_locataires

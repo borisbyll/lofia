@@ -13,7 +13,7 @@ export default async function DecisionPage({ params }: Props) {
     .from('demandes_reservation')
     .select(`
       id, statut, date_arrivee, date_depart, nb_nuits, montant_total,
-      message_locataire, expire_at, token_confirmation, token_refus,
+      message_locataire, expire_at, is_urgent, token_confirmation, token_refus,
       bien:biens(id, titre, photos, photo_principale, ville, quartier),
       locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)
     `)

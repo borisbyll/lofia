@@ -66,6 +66,11 @@ export async function POST(request: Request) {
     const { data: profil } = await supabaseAdmin.from('profiles').select('nom, phone').eq('id', user.id).single()
 
     // Créer transaction FedaPay
+    const isSandbox = !FEDAPAY_SECRET?.startsWith('sk_live')
+    const CHECKOUT_BASE = isSandbox ? 'https://sandbox-checkout.fedapay.com' : 'https://checkout.fedapay.com'
+    const customer: Record<string, unknown> = { firstname: (profil as any)?.nom ?? 'Client' }
+    if ((profil as any)?.phone) customer.phone_number = { number: String((profil as any).phone), country: 'TG' }
+
     const fedaRes = await fetch(`${FEDAPAY_BASE}/v1/transactions`, {
       method: 'POST',
       headers: {
@@ -74,24 +79,32 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         description: `Réservation LOFIA — ${bien.titre}`,
-        amount:      dispo.montant_total,
+        amount:      Math.round(Number(dispo.montant_total)),
         currency:    { iso: 'XOF' },
         callback_url: `${APP_URL}/mon-espace/reservations`,
-        customer:    { firstname: (profil as any)?.nom ?? 'Client', phone_number: { number: (profil as any)?.phone ?? '', country: 'TG' } },
+        customer,
         metadata:    { type: 'reservation_courte_duree', reservation_id: resa.id, bien_id },
       }),
     })
 
     if (!fedaRes.ok) {
+      const errBody = await fedaRes.text().catch(() => '')
+      console.error('[reservations/creer] FedaPay error', fedaRes.status, errBody)
       await supabaseAdmin.from('reservations').delete().eq('id', resa.id)
       return NextResponse.json({ error: 'Erreur création paiement' }, { status: 502 })
     }
 
-    const fedaData  = await fedaRes.json()
-    const token     = fedaData.v1?.token ?? fedaData.token
-    const paiementUrl = `${FEDAPAY_BASE.replace('api', 'checkout')}/payment-page/${token}`
+    const fedaData = await fedaRes.json()
+    const tx = fedaData?.['v1/transaction'] ?? fedaData?.v1?.transaction ?? fedaData?.transaction
+    const txId = String(tx?.id ?? '')
+    const paiementUrl = tx?.payment_url ?? null
 
-    await supabaseAdmin.from('reservations').update({ fedapay_transaction_id: String(fedaData.v1?.id ?? fedaData.id) }).eq('id', resa.id)
+    if (!paiementUrl) {
+      await supabaseAdmin.from('reservations').delete().eq('id', resa.id)
+      return NextResponse.json({ error: 'Erreur création paiement FedaPay' }, { status: 502 })
+    }
+
+    await supabaseAdmin.from('reservations').update({ fedapay_transaction_id: txId }).eq('id', resa.id)
 
     return NextResponse.json({ success: true, reservation_id: resa.id, paiement_url: paiementUrl })
   } catch (err) {

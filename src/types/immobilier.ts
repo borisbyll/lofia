@@ -51,6 +51,7 @@ export interface Bien {
   niveau_sponsoring: 'standard' | 'boost' | 'premium'
   score_tri: number
   sponsoring_actif_jusqu: string | null
+  mode_reservation: 'sur_demande' | 'instantanee'
   vues: number
   favoris_count: number
   moderateur_id: string | null

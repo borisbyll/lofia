@@ -9,12 +9,15 @@ interface Props {
 }
 
 export default function TimerNoShow({ heureArriveePrevue, dateDebut }: Props) {
-  const [maintenant, setMaintenant] = useState(new Date())
+  const [maintenant, setMaintenant] = useState<Date | null>(null)
 
   useEffect(() => {
+    setMaintenant(new Date())
     const t = setInterval(() => setMaintenant(new Date()), 30_000)
     return () => clearInterval(t)
   }, [])
+
+  if (!maintenant) return null
 
   const dateArriveePrevue = heureArriveePrevue
     ? new Date(`${dateDebut}T${heureArriveePrevue}`)

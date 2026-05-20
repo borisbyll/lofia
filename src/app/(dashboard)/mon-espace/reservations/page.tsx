@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   CalendarCheck, CheckCircle, Clock, XCircle,
   Home, Loader2, Lock, Unlock, MapPin, User, Star,
-  CreditCard, AlertTriangle,
+  CreditCard, AlertTriangle, Zap,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
@@ -77,7 +77,10 @@ function ResaCard({
   const Icon = sc.icon
   const bienData = r.bien as any
   const tiers = vue === 'proprietaire' ? (r.locataire as any) : (r.proprietaire as any)
-  const fonds_liberes = r.liberation_fonds_at && new Date(r.liberation_fonds_at) <= new Date()
+  const [fonds_liberes, setFondsLiberes] = useState(false)
+  useEffect(() => {
+    setFondsLiberes(!!(r.liberation_fonds_at && new Date(r.liberation_fonds_at) <= new Date()))
+  }, [r.liberation_fonds_at])
 
   return (
     <div className="bg-white rounded-2xl border border-primary-50 shadow-sm overflow-hidden">
@@ -265,6 +268,7 @@ function SectionReservations({
     { v: 'confirme',   l: 'Confirmées' },
     { v: 'en_sejour',  l: 'En séjour' },
     { v: 'termine',    l: 'Terminées' },
+    { v: 'annule',     l: 'Annulées' },
   ].filter(t => t.v === 'all' || counts[t.v as keyof typeof counts] > 0)
 
   const filtered = filter === 'all' ? resas : resas.filter(r => r.statut === filter)
@@ -355,18 +359,28 @@ function SectionReservations({
 
 /* ── Carte demande reçue (propriétaire) ─────────────────────── */
 function DemandePropCard({ d }: { d: Demande }) {
-  const bien     = Array.isArray(d.biens) ? d.biens[0] : (d as any).biens
+  const bien      = Array.isArray(d.biens) ? d.biens[0] : (d as any).biens
   const locataire = (d as any).locataire
-  const expired  = new Date(d.expire_at) < new Date()
+  const urgent    = !!(d as any).is_urgent
+  const [expired, setExpired] = useState(false)
+  useEffect(() => { setExpired(new Date(d.expire_at) < new Date()) }, [d.expire_at])
   return (
-    <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
-      <div className="bg-amber-50 px-4 py-2 flex items-center justify-between">
-        <span className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
-          <Clock size={12} /> Réponse requise
+    <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden ${urgent ? 'border-orange-400' : 'border-amber-200'}`}>
+      <div className={`px-4 py-2 flex items-center justify-between ${urgent ? 'bg-orange-50' : 'bg-amber-50'}`}>
+        <span className={`text-xs font-bold flex items-center gap-1.5 ${urgent ? 'text-orange-700' : 'text-amber-700'}`}>
+          {urgent ? <><Zap size={12} className="text-orange-500" /> URGENT · 2h pour répondre</> : <><Clock size={12} /> Réponse requise</>}
         </span>
         {!expired && <TimerExpiration expire_at={d.expire_at} label="Expire dans" />}
         {expired && <span className="text-xs text-red-500 font-semibold">Expirée</span>}
       </div>
+      {urgent && (
+        <div className="bg-orange-500 px-4 py-1.5 flex items-center gap-2">
+          <Zap size={12} className="text-white shrink-0" />
+          <p className="text-[10px] text-white font-semibold">
+            ⚡ Ce locataire a besoin d&apos;une réponse rapide — répondez dans les 2h pour ne pas perdre cette réservation.
+          </p>
+        </div>
+      )}
       <div className="flex items-center gap-4 p-4 border-b border-amber-50">
         <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
           {bien?.photos?.[0]
@@ -409,16 +423,41 @@ interface Demande {
   nb_nuits: number
   montant_total: number
   expire_at: string
+  is_urgent?: boolean
   lien_paiement_expire_at?: string | null
   tentatives_paiement?: number
   biens?: any
 }
 
+const STATUT_DEMANDE: Record<string, { label: string; badge: string }> = {
+  en_attente:        { label: '⏳ En attente',          badge: 'badge-warning' },
+  confirmee:         { label: '✅ Confirmée',            badge: 'badge-success' },
+  payee:             { label: '💰 Payée',               badge: 'badge-success' },
+  refusee:           { label: '❌ Refusée',              badge: 'badge-danger'  },
+  expiree:           { label: '⏰ Expirée',              badge: 'badge-gray'    },
+  annulee_locataire: { label: '🚫 Annulée par vous',    badge: 'badge-danger'  },
+  annulee_systeme:   { label: '🤖 Annulée (système)',   badge: 'badge-gray'    },
+}
+
+const MOTIF_ANNULATION: Record<string, string> = {
+  refusee:           'Le propriétaire n\'a pas retenu votre demande.',
+  expiree:           'Le propriétaire n\'a pas répondu dans les délais impartis.',
+  annulee_locataire: 'Vous avez annulé cette demande.',
+  annulee_systeme:   'Annulée automatiquement (dates indisponibles ou trop de tentatives de paiement).',
+}
+
 function DemandeCard({ d }: { d: Demande }) {
   const bien = Array.isArray(d.biens) ? d.biens[0] : d.biens
+  const sc = STATUT_DEMANDE[d.statut] ?? { label: d.statut, badge: 'badge-gray' }
+  const isInactive = ['refusee', 'expiree', 'annulee_locataire', 'annulee_systeme'].includes(d.statut)
+  const motif = MOTIF_ANNULATION[d.statut]
+
   return (
-    <div className="bg-white rounded-2xl border border-primary-50 shadow-sm overflow-hidden">
-      <div className="flex items-center gap-4 p-4 border-b border-primary-50">
+    <div className={cn(
+      'bg-white rounded-2xl shadow-sm overflow-hidden border',
+      isInactive ? 'border-gray-100 opacity-80' : 'border-primary-50'
+    )}>
+      <div className="flex items-center gap-4 p-4 border-b border-gray-50">
         <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
           {bien?.photos?.[0]
             ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
@@ -430,26 +469,35 @@ function DemandeCard({ d }: { d: Demande }) {
           <p className="text-xs text-brun-doux mt-0.5">{formatDate(d.date_arrivee)} → {formatDate(d.date_depart)} — {d.nb_nuits} nuit{d.nb_nuits > 1 ? 's' : ''}</p>
           <p className="font-black text-primary-500 text-sm mt-0.5">{formatPrix(d.montant_total)}</p>
         </div>
-        <span className={cn('badge text-xs shrink-0', d.statut === 'en_attente' ? 'badge-warning' : d.statut === 'confirmee' ? 'badge-success' : 'badge-gray')}>
-          {d.statut === 'en_attente' ? '⏳ En attente' : d.statut === 'confirmee' ? '✅ Confirmée' : d.statut}
-        </span>
+        <span className={cn('badge text-xs shrink-0', sc.badge)}>{sc.label}</span>
       </div>
 
       <div className="p-4 space-y-3">
+        {/* Motif d'annulation/refus */}
+        {isInactive && motif && (
+          <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2">{motif}</p>
+        )}
+
+        {/* Timer en attente */}
         {d.statut === 'en_attente' && (
           <TimerExpiration expire_at={d.expire_at} label="Expire dans" />
         )}
-        {d.statut === 'confirmee' && d.lien_paiement_expire_at && (
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <AlertTriangle size={14} className="text-amber-500" />
-              <TimerExpiration expire_at={d.lien_paiement_expire_at} label="Paiement expire dans" />
-            </div>
-            <Link href={`/reservations/payer/${d.id}`} className="btn btn-primary text-sm px-4 py-2 gap-1.5">
+
+        {/* Paiement si confirmée */}
+        {d.statut === 'confirmee' && (
+          <div className="space-y-2">
+            {d.lien_paiement_expire_at && (
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle size={14} className="text-amber-500" />
+                <TimerExpiration expire_at={d.lien_paiement_expire_at} label="Paiement expire dans" />
+              </div>
+            )}
+            <Link href={`/reservations/payer/${d.id}`} className="btn btn-primary w-full justify-center text-sm gap-1.5">
               <CreditCard size={13} /> Payer maintenant
             </Link>
           </div>
         )}
+
         <div className="flex items-center gap-3">
           <Link href={`/reservations/demandes/${d.id}`} className="text-xs text-primary-500 hover:underline font-semibold">
             Voir le détail →
@@ -507,13 +555,13 @@ export default function ReservationsPage() {
         .limit(50),
       // Demandes envoyées par le locataire
       supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, tentatives_paiement, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, lien_paiement_expire_at, tentatives_paiement, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
         .eq('locataire_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(30),
       // Demandes reçues par le propriétaire
       supabase.from('demandes_reservation')
-        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, token_confirmation, token_refus, biens(id, titre, photos, photo_principale, ville), locataire:profiles!demandes_reservation_locataire_id_fkey(nom, avatar_url)')
         .eq('proprietaire_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(30),
@@ -593,6 +641,43 @@ export default function ReservationsPage() {
               ))}
             </div>
           )}
+
+          {/* Demandes refusées / expirées / annulées (propriétaire) */}
+          {demandesProp.filter(d => ['refusee', 'expiree', 'annulee_locataire', 'annulee_systeme'].includes(d.statut)).length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Demandes non abouties</p>
+              {demandesProp
+                .filter(d => ['refusee', 'expiree', 'annulee_locataire', 'annulee_systeme'].includes(d.statut))
+                .map(d => {
+                  const bien = Array.isArray(d.biens) ? d.biens[0] : (d as any).biens
+                  const locataire = (d as any).locataire
+                  const sc = STATUT_DEMANDE[d.statut] ?? { label: d.statut, badge: 'badge-gray' }
+                  return (
+                    <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden opacity-80">
+                      <div className="flex items-center gap-4 p-4">
+                        <div className="w-11 h-11 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
+                          {bien?.photos?.[0]
+                            ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center"><Home size={16} style={{ color: '#E8909F' }} /></div>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate text-brun-nuit">{bien?.titre ?? '—'}</p>
+                          <p className="text-xs text-brun-doux mt-0.5">
+                            {locataire?.nom ?? 'Locataire'} · {formatDate(d.date_arrivee)} → {formatDate(d.date_depart)}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-black text-primary-500 text-sm">{formatPrix(d.montant_total)}</p>
+                          <span className={cn('badge text-xs mt-1', sc.badge)}>{sc.label}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          )}
+
           <SectionReservations
             titre="Réservations reçues"
             resas={resasProp}
@@ -681,21 +766,24 @@ export default function ReservationsPage() {
                 </div>
               ) : (
                 <>
-                  {resasAnnulees.map(r => (
-                    <ResaCard key={r.id} r={r} vue="locataire" loadingId={loadingId} />
-                  ))}
-                  {demandesInactives.map(d => (
-                    <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-sm text-brun-nuit">{(Array.isArray(d.biens) ? d.biens[0] : d.biens)?.titre ?? '—'}</p>
-                          <p className="text-xs text-brun-doux mt-0.5">{formatDate(d.date_arrivee)} → {formatDate(d.date_depart)}</p>
-                          <p className="text-xs text-gray-400 mt-1">{d.statut === 'refusee' ? '❌ Refusée' : d.statut === 'expiree' ? '⏰ Expirée' : '🚫 Annulée'}</p>
-                        </div>
-                        <p className="font-black text-primary-500 text-sm shrink-0">{formatPrix(d.montant_total)}</p>
-                      </div>
+                  {/* Réservations annulées (payées puis annulées) */}
+                  {resasAnnulees.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Réservations annulées</p>
+                      {resasAnnulees.map(r => (
+                        <ResaCard key={r.id} r={r} vue="locataire" loadingId={loadingId} />
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {/* Demandes non abouties (refusées, expirées, annulées avant paiement) */}
+                  {demandesInactives.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Demandes non abouties</p>
+                      {demandesInactives.map(d => (
+                        <DemandeCard key={d.id} d={d} />
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </div>

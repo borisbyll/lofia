@@ -5,7 +5,7 @@ import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
-  expire_at: string
+  expire_at: string | null | undefined
   label?: string
   className?: string
   onExpire?: () => void
@@ -30,11 +30,15 @@ function getCouleur(ms: number): string {
 }
 
 export default function TimerExpiration({ expire_at, label, className, onExpire }: Props) {
-  const [ms, setMs] = useState(() => new Date(expire_at).getTime() - Date.now())
+  // Initialisé à null côté serveur pour éviter le mismatch d'hydratation
+  const [ms, setMs] = useState<number | null>(null)
 
   useEffect(() => {
+    if (!expire_at) return
+    const calc = () => new Date(expire_at).getTime() - Date.now()
+    setMs(calc())
     const interval = setInterval(() => {
-      const remaining = new Date(expire_at).getTime() - Date.now()
+      const remaining = calc()
       setMs(remaining)
       if (remaining <= 0) {
         clearInterval(interval)
@@ -43,6 +47,8 @@ export default function TimerExpiration({ expire_at, label, className, onExpire 
     }, 1000)
     return () => clearInterval(interval)
   }, [expire_at, onExpire])
+
+  if (ms === null) return <div className="h-5 w-24 skeleton rounded" />
 
   return (
     <div className={cn('flex items-center gap-1.5', className)}>

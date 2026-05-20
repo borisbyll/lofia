@@ -9,25 +9,26 @@ import { cn, formatRelative } from '@/lib/utils'
 import type { Notification } from '@/types/immobilier'
 
 const ICON_BY_TYPE: Record<string, string> = {
-  // Réservations
-  reservation_nouvelle:      '🏠',
-  reservation_confirmee:     '✅',
-  reservation_annulee:       '❌',
-  reservation:               '🏠',   // type DB (confirmer_arrivee trigger)
-  // Paiements
-  paiement_recu:             '💰',
-  liberation_fonds:          '💸',
-  paiement:                  '💰',   // type DB legacy (liberer_fonds + confirm-fedapay)
-  // Biens
-  bien_approuve:             '✅',
-  bien_rejete:               '❌',
-  bien_signale:              '🚨',
-  signalement:               '🚨',   // type DB (auto-suspend trigger)
-  // Messages & avis
-  message_nouveau:           '💬',
-  avis_nouveau:              '⭐',
-  // Identité
-  identite_verifiee:         '🛡️',
+  reservation_nouvelle: '🏠', reservation_confirmee: '✅', reservation_annulee: '❌',
+  reservation: '🏠', paiement_recu: '💰', liberation_fonds: '💸', paiement: '💰',
+  bien_approuve: '✅', bien_rejete: '❌', bien_signale: '🚨', signalement: '🚨',
+  message_nouveau: '💬', avis_nouveau: '⭐', identite_verifiee: '🛡️',
+  demande_reservation: '🏠', demande_envoyee: '📤', demande_confirmee: '🎉',
+  paiement_confirme: '✅', nouvelle_reservation: '🏠', paiement_echec_max: '⚠️',
+  contrat_a_signer: '📝', contrat_signe: '✅', frais_dossier_a_payer: '💰',
+  promesse_a_signer: '📝', sponsoring_active: '⭐', nouvelle_offre_achat: '💼',
+}
+
+const LIEN_VALIDES = [
+  '/mon-espace/', '/moderateur/', '/admin/',
+  '/biens/', '/proprietaire/',
+  '/reservations/', '/longue-duree/', '/vente/', '/avis/',
+]
+
+function notifHref(n: Notification & { type?: string; lien?: string }): string {
+  // Pour les notifications avec un lien d'action direct, on y va directement
+  if (n.lien && LIEN_VALIDES.some(p => n.lien!.startsWith(p))) return n.lien
+  return `/mon-espace/notifications/${n.id}`
 }
 
 function notifIcon(type: string) {
@@ -122,7 +123,7 @@ export default function NotificationsPage() {
           {notifs.map(n => (
             <Link
               key={n.id}
-              href={`/mon-espace/notifications/${n.id}`}
+              href={notifHref(n as any)}
               onClick={() => { if (!n.lu) markOne(n.id) }}
               className={cn(
                 'flex items-start gap-3 px-4 py-4 hover:bg-gray-50 transition-colors',

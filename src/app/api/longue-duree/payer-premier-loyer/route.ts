@@ -48,27 +48,24 @@ export async function POST(req: NextRequest) {
         amount: montant_total,
         currency: { iso: 'XOF' },
         callback_url: `${APP_URL}/api/webhooks/fedapay`,
-        customer: { firstname: (profile?.nom ?? '').split(' ')[0] ?? 'Client', phone_number: { number: profile?.phone ?? '', country: 'TG' } },
+        customer: Object.assign({ firstname: (profile?.nom ?? '').split(' ')[0] || 'Client' }, profile?.phone ? { phone_number: { number: String(profile.phone), country: 'TG' } } : {}),
         metadata: { type: 'premier_loyer', contrat_id },
       }),
     })
 
-    const tx = await txRes.json()
-    if (!txRes.ok) return NextResponse.json({ error: tx.message ?? 'Erreur FedaPay' }, { status: 500 })
+    const txData = await txRes.json()
+    if (!txRes.ok) return NextResponse.json({ error: txData.message ?? 'Erreur FedaPay' }, { status: 500 })
 
-    const txId = tx.v1?.transaction?.id ?? tx.transaction?.id
-    const paymentToken = tx.v1?.token ?? tx.token
+    const txObj = txData?.['v1/transaction'] ?? txData?.v1?.transaction ?? txData?.transaction
+    const txId  = String(txObj?.id ?? '')
+    const payment_url = txObj?.payment_url ?? null
 
     await supabaseAdmin
       .from('contrats_location')
-      .update({ fedapay_transaction_id: String(txId) })
+      .update({ fedapay_transaction_id: txId })
       .eq('id', contrat_id)
 
-    return NextResponse.json({
-      success: true,
-      payment_url: `${isSandbox ? 'https://sandbox-checkout.fedapay.com' : 'https://checkout.fedapay.com'}/pay/${paymentToken}`,
-      montant_total,
-    })
+    return NextResponse.json({ success: true, payment_url, montant_total })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }

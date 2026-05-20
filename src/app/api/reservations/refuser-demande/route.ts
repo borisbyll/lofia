@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
+export const dynamic = 'force-dynamic'
+
 // CDC v2 §1.2 — Refus par le propriétaire via token (sans connexion)
 export async function GET(request: Request) {
   try {

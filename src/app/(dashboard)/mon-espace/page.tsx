@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Home, Eye, Heart, CalendarCheck, Plus,
   ArrowRight, Lock, TrendingUp, CheckCircle, ArrowUpRight,
-  Wallet, MessageSquare, Star,
+  Wallet, MessageSquare, Star, Clock, CreditCard, Zap,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuthStore } from '@/store/authStore'
@@ -26,6 +26,14 @@ interface StatsLocataire {
   enCours: number
   favoris: number
   messages: number
+}
+
+interface StatsDemandes {
+  total: number
+  enAttente: number
+  acceptees: number   // confirmee + payee
+  refusees: number
+  annulees: number    // expiree + annulee_locataire + annulee_systeme
 }
 
 interface AnnonceRecente {
@@ -56,6 +64,22 @@ interface ReservationProprietaire {
   bien: { titre: string } | null
 }
 
+interface DemandeActive {
+  id: string
+  statut: string
+  date_arrivee: string
+  date_depart: string
+  nb_nuits: number
+  montant_total: number
+  expire_at: string
+  lien_paiement_expire_at?: string | null
+  is_urgent?: boolean
+  token_confirmation?: string
+  token_refus?: string
+  biens?: { titre?: string; photos?: string[]; photo_principale?: string | null } | null
+  locataire?: { nom?: string } | null
+}
+
 /* ── Helpers ─────────────────────────────────────────────────── */
 const STATUT_BADGE: Record<string, { label: string; cls: string }> = {
   publie:     { label: 'Publié',      cls: 'badge-success' },
@@ -78,17 +102,29 @@ function nuits(debut: string, fin: string) {
   return d > 0 ? `${d} nuit${d > 1 ? 's' : ''}` : ''
 }
 
+function formatTimerShort(ms: number): string {
+  if (ms <= 0) return 'Expiré'
+  const h = Math.floor(ms / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  if (h > 0) return `${h}h ${m}min`
+  return `${m}min`
+}
+
 /* ── Composant principal ─────────────────────────────────────── */
 export default function DashboardPage() {
   const { user, profile } = useAuthStore()
   const { mode }          = useDashboardMode()
 
-  const [statsP,   setStatsP]   = useState<StatsProprietaire | null>(null)
-  const [statsL,   setStatsL]   = useState<StatsLocataire | null>(null)
-  const [annonces, setAnnonces] = useState<AnnonceRecente[]>([])
-  const [resasProp, setResasProp] = useState<ReservationProprietaire[]>([])
-  const [resasLoc,  setResasLoc]  = useState<ReservationLocataire[]>([])
-  const [loading,  setLoading]  = useState(true)
+  const [statsP,       setStatsP]       = useState<StatsProprietaire | null>(null)
+  const [statsL,       setStatsL]       = useState<StatsLocataire | null>(null)
+  const [demandesPSt,  setDemandesPSt]  = useState<StatsDemandes | null>(null)
+  const [demandesLSt,  setDemandesLSt]  = useState<StatsDemandes | null>(null)
+  const [annonces,     setAnnonces]     = useState<AnnonceRecente[]>([])
+  const [resasProp,    setResasProp]    = useState<ReservationProprietaire[]>([])
+  const [resasLoc,     setResasLoc]     = useState<ReservationLocataire[]>([])
+  const [demandesPendingProp, setDemandesPendingProp] = useState<DemandeActive[]>([])
+  const [demandesActiveLoc,  setDemandesActiveLoc]   = useState<DemandeActive[]>([])
+  const [loading,      setLoading]      = useState(true)
 
   useEffect(() => {
     if (!user) return
@@ -99,12 +135,20 @@ export default function DashboardPage() {
     setLoading(true)
     const uid = user!.id
 
-    const [biensRes, favRes, resaPropRes, resaLocRes, msgRes] = await Promise.all([
+    const [biensRes, favRes, resaPropRes, resaLocRes, msgRes, demPropRes, demLocRes, demPendingPropRes, demActiveLocRes] = await Promise.all([
       supabase.from('biens').select('id, titre, statut, prix, categorie, vues').eq('owner_id', uid).order('created_at', { ascending: false }).limit(5),
       supabase.from('favoris').select('id', { count: 'exact' }).eq('user_id', uid),
       supabase.from('reservations').select('id, statut, date_debut, date_fin, prix_total, montant_proprio, locataire:profiles!locataire_id(nom), bien:biens!bien_id(titre)').eq('proprietaire_id', uid).order('created_at', { ascending: false }),
       supabase.from('reservations').select('id, statut, date_debut, date_fin, prix_total, bien:biens!bien_id(titre, ville)').eq('locataire_id', uid).order('created_at', { ascending: false }).limit(10),
       supabase.from('messages_contact').select('id', { count: 'exact' }).eq('owner_id', uid).eq('lu', false),
+      supabase.from('demandes_reservation').select('statut').eq('proprietaire_id', uid),
+      supabase.from('demandes_reservation').select('statut').eq('locataire_id', uid),
+      supabase.from('demandes_reservation')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, is_urgent, token_confirmation, token_refus, biens(id, titre, photos, photo_principale), locataire:profiles!demandes_reservation_locataire_id_fkey(nom)')
+        .eq('proprietaire_id', uid).eq('statut', 'en_attente').order('expire_at', { ascending: true }).limit(5),
+      supabase.from('demandes_reservation')
+        .select('id, statut, date_arrivee, date_depart, nb_nuits, montant_total, expire_at, lien_paiement_expire_at, is_urgent, biens(id, titre, photos, photo_principale)')
+        .eq('locataire_id', uid).in('statut', ['en_attente', 'confirmee']).order('created_at', { ascending: false }).limit(5),
     ])
 
     const allBiens = biensRes.data ?? []
@@ -127,14 +171,29 @@ export default function DashboardPage() {
       messages:     msgRes.count ?? 0,
     })
 
+    const buildDemStat = (rows: { statut: string }[]): StatsDemandes => ({
+      total:     rows.length,
+      enAttente: rows.filter(r => r.statut === 'en_attente').length,
+      acceptees: rows.filter(r => ['confirmee', 'payee'].includes(r.statut)).length,
+      refusees:  rows.filter(r => r.statut === 'refusee').length,
+      annulees:  rows.filter(r => ['expiree', 'annulee_locataire', 'annulee_systeme'].includes(r.statut)).length,
+    })
+    setDemandesPSt(buildDemStat((demPropRes.data ?? []) as { statut: string }[]))
+    setDemandesLSt(buildDemStat((demLocRes.data ?? []) as { statut: string }[]))
+
     setAnnonces(allBiens as AnnonceRecente[])
     setResasProp(propResas.slice(0, 5))
     setResasLoc(locResas.slice(0, 5))
+    setDemandesPendingProp((demPendingPropRes.data ?? []) as unknown as DemandeActive[])
+    setDemandesActiveLoc((demActiveLocRes.data ?? []) as unknown as DemandeActive[])
     setLoading(false)
   }
 
-  const heure = new Date().getHours()
-  const salut = heure < 12 ? 'Bonjour' : heure < 18 ? 'Bon après-midi' : 'Bonsoir'
+  const [salut, setSalut] = useState('Bonjour')
+  useEffect(() => {
+    const h = new Date().getHours()
+    setSalut(h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir')
+  }, [])
   const prenom = profile?.nom?.split(' ')[0] ?? 'vous'
 
   /* ── Skeleton ─────────────────────────────────────────────── */
@@ -201,6 +260,105 @@ export default function DashboardPage() {
           )
         })}
       </div>
+
+      {/* ── Demandes à confirmer (propriétaire — cartes actionables) ── */}
+      {demandesPendingProp.length > 0 && (
+        <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
+          <div className="bg-amber-50 px-5 py-3 border-b border-amber-100 flex items-center justify-between">
+            <h2 className="font-bold text-sm text-amber-800 flex items-center gap-2">
+              <Clock size={14} />
+              Demandes à confirmer
+              <span className="px-1.5 py-0 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                {demandesPendingProp.length}
+              </span>
+            </h2>
+            <Link href="/mon-espace/reservations" className="text-xs font-semibold text-amber-700 hover:underline flex items-center gap-1">
+              Tout voir <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="divide-y divide-amber-50">
+            {demandesPendingProp.map(d => {
+              const bien = Array.isArray(d.biens) ? d.biens[0] : d.biens
+              const loc  = d.locataire
+              const expireMs = new Date(d.expire_at).getTime() - Date.now()
+              return (
+                <div key={d.id} className={`p-4 ${d.is_urgent ? 'bg-orange-50/40' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
+                      {bien?.photos?.[0]
+                        ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center"><Home size={16} style={{ color: '#E8909F' }} /></div>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        {d.is_urgent && (
+                          <span className="text-[9px] font-bold bg-orange-500 text-white px-1.5 rounded-full flex items-center gap-0.5">
+                            <Zap size={8} /> URGENT
+                          </span>
+                        )}
+                        <p className="text-sm font-bold truncate text-brun-nuit">{bien?.titre ?? '—'}</p>
+                      </div>
+                      <p className="text-xs text-brun-doux">
+                        {loc?.nom ?? 'Locataire'} · {formatDate(d.date_arrivee)} → {formatDate(d.date_depart)} · {d.nb_nuits} nuit{d.nb_nuits > 1 ? 's' : ''}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="font-black text-primary-500 text-sm">{formatPrix(d.montant_total)}</p>
+                        {expireMs > 0 && (
+                          <span className={`text-[10px] font-semibold ${expireMs < 3600000 ? 'text-red-500' : 'text-amber-600'}`}>
+                            · ⏰ {formatTimerShort(expireMs)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Link
+                      href={`/reservations/decision/${d.token_refus}`}
+                      className="btn btn-outline flex-1 justify-center text-xs border-red-200 text-red-600 hover:bg-red-50"
+                      style={{ minHeight: 36, paddingTop: 8, paddingBottom: 8 }}
+                    >
+                      Refuser
+                    </Link>
+                    <Link
+                      href={`/reservations/decision/${d.token_confirmation}`}
+                      className="btn btn-primary flex-1 justify-center text-xs"
+                      style={{ minHeight: 36, paddingTop: 8, paddingBottom: 8 }}
+                    >
+                      Confirmer
+                    </Link>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Stats historiques (uniquement quand plus de pending) */}
+      {demandesPSt && demandesPSt.total > 0 && demandesPendingProp.length === 0 && (
+        <div className="bg-white rounded-2xl border border-primary-50 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary-50">
+            <h2 className="font-bold text-sm" style={{ color: '#1a0a00' }}>Historique des demandes</h2>
+            <Link href="/mon-espace/reservations" className="text-xs font-semibold flex items-center gap-1 hover:underline" style={{ color: '#8B1A2E' }}>
+              Détail <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 divide-x divide-primary-50">
+            {[
+              { label: 'Total',     value: demandesPSt.total,     color: '#1a0a00', bg: 'bg-gray-50' },
+              { label: 'Acceptées', value: demandesPSt.acceptees, color: '#2D6A4F', bg: 'bg-green-50' },
+              { label: 'Refusées',  value: demandesPSt.refusees,  color: '#8B1A2E', bg: 'bg-red-50' },
+              { label: 'Annulées',  value: demandesPSt.annulees,  color: '#7a5c3a', bg: 'bg-gray-50' },
+            ].map(s => (
+              <div key={s.label} className={cn('px-4 py-3.5 text-center', s.bg)}>
+                <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: '#7a5c3a' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Mes annonces ── */}
       <div className="bg-white rounded-2xl border border-primary-50 shadow-sm">
@@ -376,6 +534,96 @@ export default function DashboardPage() {
           )
         })}
       </div>
+
+      {/* ── Demandes actives (locataire — cartes actionables) ── */}
+      {demandesActiveLoc.length > 0 && (
+        <div className="bg-white rounded-2xl border border-primary-50 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary-50">
+            <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: '#1a0a00' }}>
+              <Clock size={14} className="text-amber-500" />
+              Mes demandes en cours
+              <span className="px-1.5 py-0 rounded-full text-[10px] font-bold bg-primary-500 text-white">
+                {demandesActiveLoc.length}
+              </span>
+            </h2>
+            <Link href="/mon-espace/reservations" className="text-xs font-semibold flex items-center gap-1 hover:underline" style={{ color: '#8B1A2E' }}>
+              Voir <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {demandesActiveLoc.map(d => {
+              const bien = Array.isArray(d.biens) ? d.biens[0] : d.biens
+              const isConfirmee = d.statut === 'confirmee'
+              const expireMs = isConfirmee && d.lien_paiement_expire_at
+                ? new Date(d.lien_paiement_expire_at).getTime() - Date.now()
+                : new Date(d.expire_at).getTime() - Date.now()
+              return (
+                <div key={d.id} className="flex items-center gap-3 p-4">
+                  <div className="w-11 h-11 rounded-xl overflow-hidden bg-primary-50 flex-shrink-0">
+                    {bien?.photos?.[0]
+                      ? <img src={bien.photos[0]} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><Home size={16} style={{ color: '#E8909F' }} /></div>
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate text-brun-nuit">{bien?.titre ?? '—'}</p>
+                    <p className="text-xs text-brun-doux">{formatDate(d.date_arrivee)} → {formatDate(d.date_depart)}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className={`badge text-[10px] ${isConfirmee ? 'badge-success' : 'badge-warning'}`}>
+                        {isConfirmee ? '✅ Confirmée' : '⏳ En attente'}
+                      </span>
+                      <span className="font-black text-primary-500 text-xs">{formatPrix(d.montant_total)}</span>
+                      {expireMs > 0 && (
+                        <span className={`text-[10px] font-semibold ${expireMs < 3600000 ? 'text-red-500' : 'text-amber-600'}`}>
+                          · {formatTimerShort(expireMs)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {isConfirmee ? (
+                    <Link
+                      href={`/reservations/payer/${d.id}`}
+                      className="btn btn-primary text-xs shrink-0 gap-1"
+                      style={{ minHeight: 36, paddingTop: 8, paddingBottom: 8 }}
+                    >
+                      <CreditCard size={12} /> Payer
+                    </Link>
+                  ) : (
+                    <Link href={`/reservations/demandes/${d.id}`} className="text-xs text-primary-500 font-semibold hover:underline shrink-0">
+                      Suivre →
+                    </Link>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Stats historiques (uniquement quand plus d'actives) */}
+      {demandesLSt && demandesLSt.total > 0 && demandesActiveLoc.length === 0 && (
+        <div className="bg-white rounded-2xl border border-primary-50 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary-50">
+            <h2 className="font-bold text-sm" style={{ color: '#1a0a00' }}>Mes demandes passées</h2>
+            <Link href="/mon-espace/reservations" className="text-xs font-semibold flex items-center gap-1 hover:underline" style={{ color: '#8B1A2E' }}>
+              Détail <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 divide-x divide-primary-50">
+            {[
+              { label: 'Total',     value: demandesLSt.total,     color: '#1a0a00', bg: 'bg-gray-50' },
+              { label: 'Acceptées', value: demandesLSt.acceptees, color: '#2D6A4F', bg: 'bg-green-50' },
+              { label: 'Refusées',  value: demandesLSt.refusees,  color: '#8B1A2E', bg: 'bg-red-50' },
+              { label: 'Annulées',  value: demandesLSt.annulees,  color: '#7a5c3a', bg: 'bg-gray-50' },
+            ].map(s => (
+              <div key={s.label} className={cn('px-4 py-3.5 text-center', s.bg)}>
+                <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: '#7a5c3a' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Réservations ── */}
       <div className="bg-white rounded-2xl border border-primary-50 shadow-sm">

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { notifContratSigne, notifFraisDossier } from '@/lib/notifications/whatsapp'
+
+export const dynamic = 'force-dynamic'
 import { formatPrix } from '@/lib/utils'
 
 const APP_URL = process.env.APP_URL ?? 'https://lofia.vercel.app'
