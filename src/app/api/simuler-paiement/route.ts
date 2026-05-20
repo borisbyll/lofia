@@ -71,16 +71,16 @@ export async function POST(request: Request) {
         {
           user_id: demande.locataire_id,
           type: 'paiement_confirme',
-          titre: '✅ [SIMULATION] Paiement confirmé — Réservation validée !',
-          corps: `Votre séjour à "${titreBien}" du ${formatDate(demande.date_arrivee)} au ${formatDate(demande.date_depart)} est confirmé.`,
-          lien: `/mon-espace/reservations`,
+          titre: '✅ [SIMULATION] Réservation confirmée !',
+          corps: `Votre séjour à "${titreBien}" du ${formatDate(demande.date_arrivee)} au ${formatDate(demande.date_depart)} est confirmé. Consultez les détails pour l'heure d'arrivée et les contacts.`,
+          lien: `/mon-espace/reservations/${resa.id}`,
         },
         {
           user_id: demande.proprietaire_id,
           type: 'nouvelle_reservation',
-          titre: '💰 [SIMULATION] Paiement reçu — Réservation confirmée',
-          corps: `La réservation de "${titreBien}" est confirmée. Montant proprio : ${formatPrix(montantProprio)}.`,
-          lien: `/mon-espace/reservations`,
+          titre: '💰 [SIMULATION] Nouvelle réservation confirmée !',
+          corps: `"${titreBien}" est réservé du ${formatDate(demande.date_arrivee)} au ${formatDate(demande.date_depart)}. Votre revenu : ${formatPrix(montantProprio)}. Les fonds seront libérés 24h après le check-in du locataire.`,
+          lien: `/mon-espace/reservations/${resa.id}`,
         },
       ])
 
@@ -132,15 +132,15 @@ export async function POST(request: Request) {
           user_id: session.user.id,
           type: 'paiement_confirme',
           titre: '⚡ [SIMULATION] Réservation instantanée confirmée !',
-          corps: `Votre séjour à "${bien.titre}" du ${formatDate(date_arrivee)} au ${formatDate(date_depart)} est confirmé.`,
-          lien: `/mon-espace/reservations`,
+          corps: `Votre séjour à "${bien.titre}" du ${formatDate(date_arrivee)} au ${formatDate(date_depart)} est confirmé. Consultez les détails pour les contacts et la localisation.`,
+          lien: `/mon-espace/reservations/${resa.id}`,
         },
         {
           user_id: bien.owner_id,
           type: 'nouvelle_reservation',
-          titre: '💰 [SIMULATION] Nouvelle réservation instantanée',
-          corps: `Une réservation pour "${bien.titre}" a été confirmée. Montant : ${formatPrix(montantProprio)}.`,
-          lien: `/mon-espace/reservations`,
+          titre: '💰 [SIMULATION] Nouvelle réservation instantanée !',
+          corps: `"${bien.titre}" est réservé du ${formatDate(date_arrivee)} au ${formatDate(date_depart)}. Votre revenu : ${formatPrix(montantProprio)}. Les fonds sont sécurisés en séquestre et libérés 24h après le check-in.`,
+          lien: `/mon-espace/reservations/${resa.id}`,
         },
       ])
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   Users, Home, TrendingUp, Flag, Wallet, Lock, ArrowUpRight,
-  ArrowRight, Activity, DollarSign
+  ArrowRight, Activity, DollarSign, Unlock
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { formatPrix, formatDate } from '@/lib/utils'
@@ -49,12 +49,21 @@ interface RecentUser {
   avatar_url: string | null
 }
 
+interface FondsLibere {
+  id: string
+  proprio_paye_at: string
+  montant_proprio: number
+  bien: { titre: string } | null
+  proprietaire: { nom: string } | null
+}
+
 export default function DashboardAdminPage() {
   const [stats,    setStats]    = useState<PlatformStats | null>(null)
   const [finance,  setFinance]  = useState<Finance | null>(null)
   const [topBiens, setTopBiens] = useState<TopBien[]>([])
   const [resas,    setResas]    = useState<RecentResa[]>([])
   const [users,    setUsers]    = useState<RecentUser[]>([])
+  const [fonds,    setFonds]    = useState<FondsLibere[]>([])
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => { loadDashboard() }, [])
@@ -109,6 +118,15 @@ export default function DashboardAdminPage() {
       .order('created_at', { ascending: false })
       .limit(5)
     setUsers(usersData ?? [])
+
+    // Fonds récemment libérés
+    const { data: fondsData } = await supabase
+      .from('reservations')
+      .select('id, proprio_paye_at, montant_proprio, bien:biens!bien_id(titre), proprietaire:profiles!proprietaire_id(nom)')
+      .eq('proprio_paye', true)
+      .order('proprio_paye_at', { ascending: false })
+      .limit(8)
+    setFonds((fondsData as any) ?? [])
 
     setLoading(false)
   }
@@ -170,7 +188,7 @@ export default function DashboardAdminPage() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-3 gap-5 mb-5">
         {/* Top annonces */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between p-4 border-b border-gray-50">
@@ -265,6 +283,57 @@ export default function DashboardAdminPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Fonds libérés récemment */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between p-4 border-b border-gray-50">
+          <div className="flex items-center gap-2">
+            <Unlock size={15} className="text-green-600" />
+            <h2 className="font-bold text-gray-900 text-sm">Fonds libérés récemment</h2>
+          </div>
+          <span className="text-[10px] text-gray-400 font-medium">8 derniers transferts</span>
+        </div>
+        {loading ? (
+          <div className="divide-y divide-gray-50">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="p-3 flex items-center gap-3">
+                <div className="skeleton w-8 h-8 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="skeleton h-3 rounded w-2/3" />
+                  <div className="skeleton h-2.5 rounded w-1/3" />
+                </div>
+                <div className="skeleton h-4 rounded w-20" />
+              </div>
+            ))}
+          </div>
+        ) : fonds.length === 0 ? (
+          <div className="p-8 text-center text-gray-400 text-sm">
+            Aucun fond libéré pour le moment
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {fonds.map(f => (
+              <Link key={f.id} href={`/mon-espace/reservations/${f.id}`}
+                className="p-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <Unlock size={14} className="text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-900 truncate">
+                    {(f.proprietaire as any)?.nom ?? '—'}
+                  </p>
+                  <p className="text-[10px] text-gray-400 truncate">
+                    {(f.bien as any)?.titre ?? '—'} · {formatDate(f.proprio_paye_at)}
+                  </p>
+                </div>
+                <span className="text-xs font-black text-green-700 whitespace-nowrap">
+                  +{formatPrix(f.montant_proprio)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

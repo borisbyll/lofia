@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { appliquerEvenementScore } from '@/lib/locataires/gestion-score'
+import { formatPrix } from '@/lib/utils'
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -70,6 +71,42 @@ export async function POST(request: Request, { params }: { params: { id: string 
         }
       }
     }
+
+    /* ── Notifications ─────────────────────────────────────── */
+    const liberationAt = new Date(maintenant.getTime() + 24 * 3600 * 1000)
+    const liberationStr = liberationAt.toLocaleDateString('fr-FR', {
+      weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    })
+
+    const heureDisplay = resa.heure_arrivee_prevue
+      ? resa.heure_arrivee_prevue.substring(0, 5).replace(':', 'h')
+      : null
+
+    const { data: bienData } = await supabaseAdmin
+      .from('biens').select('titre').eq('id', resa.bien_id).single()
+    const { data: locataireData } = await supabaseAdmin
+      .from('profiles').select('nom').eq('id', resa.locataire_id).single()
+
+    const bienTitre   = (bienData as any)?.titre ?? 'votre bien'
+    const locNom      = (locataireData as any)?.nom ?? 'Le locataire'
+    const montanProprio = formatPrix(resa.montant_proprio ?? 0)
+
+    await supabaseAdmin.from('notifications').insert([
+      {
+        user_id: resa.proprietaire_id,
+        type: 'check_in_confirme',
+        titre: `✅ ${locNom} est arrivé${heureDisplay ? ` à ${heureDisplay}` : ''} !`,
+        corps: `Vos fonds (${montanProprio}) sont en séquestre et seront automatiquement libérés ${liberationStr}. Aucune action requise de votre part.`,
+        lien: `/mon-espace/reservations/${params.id}`,
+      },
+      {
+        user_id: resa.locataire_id,
+        type: 'check_in_confirme',
+        titre: '✅ Check-in enregistré !',
+        corps: `Votre arrivée à "${bienTitre}" a bien été confirmée. Les fonds seront transmis à votre hôte le ${liberationStr}.`,
+        lien: `/mon-espace/reservations/${params.id}`,
+      },
+    ])
 
     return NextResponse.json({ success: true })
   } catch (err) {

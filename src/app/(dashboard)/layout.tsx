@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Home, Heart, MessageCircle,
   CalendarCheck, User, Plus, LogOut, ChevronRight,
-  Shield, Settings, Building2, Bell, ArrowLeft, FileText, Users,
+  Shield, Settings, Building2, Bell, ArrowLeft, FileText, Users, Wallet,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
@@ -84,6 +84,7 @@ const adminItems = [
   { href: '/admin/biens',         label: 'Tous les biens',   icon: Home },
   { href: '/admin/locataires',    label: 'Scores locataires', icon: Users },
   { href: '/admin/signalements',  label: 'Signalements',     icon: Settings },
+  { href: '/admin/fonds',         label: 'Gestion des fonds', icon: Wallet },
 ]
 
 /* ── Bottom nav mobile par mode ──────────────────────────────── */
