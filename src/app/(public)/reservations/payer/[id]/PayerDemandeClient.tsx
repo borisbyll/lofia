@@ -75,8 +75,7 @@ export default function PayerDemandeClient({ demande }: Props) {
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Erreur simulation'); return }
-      toast.success('✅ Paiement simulé ! Réservation confirmée.')
-      router.push('/mon-espace/reservations')
+      router.push(`/reservations/succes/${data.reservation_id}`)
     } catch {
       toast.error('Erreur réseau')
     } finally {

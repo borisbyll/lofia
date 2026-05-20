@@ -42,8 +42,7 @@ export default function ReservationPanel({ bien }: Props) {
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Erreur simulation'); return }
-      toast.success('✅ Réservation simulée et confirmée !')
-      router.push('/mon-espace/reservations')
+      router.push(`/reservations/succes/${data.reservation_id}`)
     } catch {
       toast.error('Erreur réseau')
     } finally {

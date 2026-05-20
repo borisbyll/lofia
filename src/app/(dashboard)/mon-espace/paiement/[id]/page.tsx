@@ -90,9 +90,7 @@ export default function PaiementPage() {
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Erreur simulation'); return }
-      setPaid(true)
-      setResa(prev => prev ? { ...prev, paiement_effectue: true, statut: 'confirme' } : prev)
-      toast.success('✅ Paiement simulé ! Réservation confirmée.')
+      router.push(`/reservations/succes/${resa.id}`)
     } catch {
       toast.error('Erreur réseau')
     } finally {
@@ -159,13 +157,11 @@ export default function PaiementPage() {
             await callFn('confirm-fedapay-payment', {
               reservation_id: resa.id, transaction_id: transactionId
             })
-            setPaid(true)
-            setResa(prev => prev ? { ...prev, paiement_effectue: true, statut: 'confirme' } : prev)
-            toast.success('Paiement confirmé ! Votre réservation est validée.')
+            router.push(`/reservations/succes/${resa.id}`)
           } else {
             toast.error('Paiement annulé ou échoué')
+            setPaying(false)
           }
-          setPaying(false)
         }
       }).open()
 
