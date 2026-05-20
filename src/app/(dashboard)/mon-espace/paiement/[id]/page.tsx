@@ -79,6 +79,27 @@ export default function PaiementPage() {
     setLoading(false)
   }
 
+  const simulerPaiement = async () => {
+    if (!resa) return
+    setPaying(true)
+    try {
+      const res = await fetch('/api/simuler-paiement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reservation_courte_duree', reservation_id: resa.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Erreur simulation'); return }
+      setPaid(true)
+      setResa(prev => prev ? { ...prev, paiement_effectue: true, statut: 'confirme' } : prev)
+      toast.success('✅ Paiement simulé ! Réservation confirmée.')
+    } catch {
+      toast.error('Erreur réseau')
+    } finally {
+      setPaying(false)
+    }
+  }
+
   const lancerPaiement = async () => {
     if (!resa) return
     setPaying(true)
@@ -274,11 +295,18 @@ export default function PaiementPage() {
 
       {/* Actions */}
       {!paid ? (
-        <button onClick={lancerPaiement} disabled={paying}
-          className="btn btn-primary w-full justify-center gap-3 py-4 text-base font-black disabled:opacity-50 shadow-xl shadow-primary-500/30">
-          {paying ? <Loader2 size={20} className="animate-spin" /> : <CreditCard size={20} />}
-          {paying ? 'Chargement du paiement…' : `Payer ${formatPrix(resa.prix_total)}`}
-        </button>
+        <div className="space-y-3">
+          <button onClick={lancerPaiement} disabled={paying}
+            className="btn btn-primary w-full justify-center gap-3 py-4 text-base font-black disabled:opacity-50 shadow-xl shadow-primary-500/30">
+            {paying ? <Loader2 size={20} className="animate-spin" /> : <CreditCard size={20} />}
+            {paying ? 'Chargement du paiement…' : `Payer ${formatPrix(resa.prix_total)}`}
+          </button>
+          <button onClick={simulerPaiement} disabled={paying}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-amber-300 text-amber-700 text-sm font-semibold hover:bg-amber-50 disabled:opacity-50 transition-colors">
+            {paying ? <Loader2 size={14} className="animate-spin" /> : '🧪'}
+            Simuler le paiement (sandbox)
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
           <button onClick={() => window.print()}

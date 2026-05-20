@@ -65,6 +65,25 @@ export default function PayerDemandeClient({ demande }: Props) {
     }
   }
 
+  const handleSimuler = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/simuler-paiement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'demande_courte_duree', demande_id: demande.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Erreur simulation'); return }
+      toast.success('✅ Paiement simulé ! Réservation confirmée.')
+      router.push('/mon-espace/reservations')
+    } catch {
+      toast.error('Erreur réseau')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleAnnuler = async () => {
     setLoadingAnnuler(true)
     try {
@@ -192,6 +211,14 @@ export default function PayerDemandeClient({ demande }: Props) {
                 >
                   {loading && <Loader2 size={16} className="animate-spin" />}
                   {loading ? 'Redirection vers FedaPay…' : `Payer ${formatPrix(demande.montant_total)}`}
+                </button>
+                <button
+                  onClick={handleSimuler}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-amber-300 text-amber-700 text-sm font-semibold hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                >
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : '🧪'}
+                  Simuler le paiement (sandbox)
                 </button>
                 <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
                   <Shield size={12} />

@@ -25,6 +25,32 @@ export default function ReservationPanel({ bien }: Props) {
   const isInstantanee = bien.mode_reservation === 'instantanee'
   const prixBase = selection ? bien.prix * selection.nbNuits : 0
 
+  const handleSimulerInstantanee = async () => {
+    if (!user) { toast.error('Connectez-vous pour réserver'); router.push(`/connexion?next=/biens/${bien.slug}`); return }
+    if (!selection) { setShowCal(true); return }
+    setLoading(true)
+    try {
+      const res = await fetch('/api/simuler-paiement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'instantanee',
+          bien_id: bien.id,
+          date_arrivee: selection.dateArrivee,
+          date_depart: selection.dateDepart,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Erreur simulation'); return }
+      toast.success('✅ Réservation simulée et confirmée !')
+      router.push('/mon-espace/reservations')
+    } catch {
+      toast.error('Erreur réseau')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleReserver = async () => {
     if (!user) {
       toast.error('Connectez-vous pour réserver')
@@ -235,7 +261,7 @@ export default function ReservationPanel({ bien }: Props) {
       )}
 
       {/* CTA principal */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 space-y-2">
         <button
           onClick={handleReserver}
           disabled={loading}
@@ -258,7 +284,17 @@ export default function ReservationPanel({ bien }: Props) {
             : <><Calendar size={15} /> Réserver</>
           }
         </button>
-        <p className="text-[9px] text-center text-brun-doux mt-2">
+        {isInstantanee && selection && (
+          <button
+            onClick={handleSimulerInstantanee}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-amber-300 text-amber-700 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50 transition-colors"
+          >
+            {loading ? <Loader2 size={12} className="animate-spin" /> : '🧪'}
+            Simuler le paiement (sandbox)
+          </button>
+        )}
+        <p className="text-[9px] text-center text-brun-doux">
           {isInstantanee
             ? '⚡ Paiement immédiat · Dates bloquées instantanément · FedaPay'
             : isUrgent
