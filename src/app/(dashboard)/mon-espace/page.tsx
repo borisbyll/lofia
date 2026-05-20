@@ -129,6 +129,26 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return
     loadAll()
+
+    // Realtime — rafraîchir automatiquement quand une réservation est créée/mise à jour
+    const uid = user.id
+    const channel = supabase
+      .channel(`dashboard-reservations-${uid}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'reservations',
+        filter: `proprietaire_id=eq.${uid}`,
+      }, () => loadAll())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'reservations',
+        filter: `locataire_id=eq.${uid}`,
+      }, () => loadAll())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [user])
 
   const loadAll = async () => {
