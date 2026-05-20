@@ -67,6 +67,7 @@ export default function MesBiensPage() {
     `mes-biens-${user?.id}`,
     [{ table: 'biens', filter: user ? `owner_id=eq.${user.id}` : undefined }],
     loadBiens,
+    !!user,
   )
 
   const filtered = filter === 'all' ? biens : biens.filter(b => b.statut === filter)

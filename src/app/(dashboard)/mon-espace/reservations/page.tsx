@@ -585,6 +585,7 @@ export default function ReservationsPage() {
       { table: 'demandes_reservation', filter: user ? `locataire_id=eq.${user.id}`    : undefined },
     ],
     load,
+    !!user,
   )
 
   const confirmerArrivee = async (id: string) => {
