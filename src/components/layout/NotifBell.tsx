@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
@@ -8,19 +8,23 @@ import { useAuthStore } from '@/store/authStore'
 import { cn, formatRelative } from '@/lib/utils'
 import type { Notification } from '@/types/immobilier'
 
+interface DropPos { top: number; left?: number; right?: number }
+
 export default function NotifBell() {
   const { user } = useAuthStore()
   const [notifs, setNotifs] = useState<Notification[]>([])
-  const [open, setOpen] = useState(false)
-  const ref        = useRef<HTMLDivElement>(null)
-  const dropRef    = useRef<HTMLDivElement>(null)
-  const [alignLeft, setAlignLeft] = useState(false)
+  const [open,   setOpen]   = useState(false)
+  const [pos,    setPos]    = useState<DropPos | null>(null)
 
+  const buttonRef  = useRef<HTMLButtonElement>(null)
+  const dropRef    = useRef<HTMLDivElement>(null)
+
+  /* ── Chargement + Realtime ───────────────────────────────────── */
   useEffect(() => {
     if (!user?.id) return
     loadNotifs()
 
-    const uid = user.id
+    const uid  = user.id
     const name = `notifs-${uid}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const channel = supabase
       .channel(name)
@@ -34,17 +38,41 @@ export default function NotifBell() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
+  /* ── Click outside ───────────────────────────────────────────── */
   useEffect(() => {
+    if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const t = e.target as Node
+      if (
+        !(buttonRef.current?.contains(t)) &&
+        !(dropRef.current?.contains(t))
+      ) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [open])
+
+  /* ── Recalculer position si scroll/resize pendant ouverture ─── */
+  useEffect(() => {
+    if (!open) return
+    const update = () => {
+      if (buttonRef.current) setPos(calcPos(buttonRef.current))
+    }
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [open])
 
   const loadNotifs = async () => {
     if (!user) return
-    const { data } = await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
+    const { data } = await supabase
+      .from('notifications').select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
     setNotifs(data || [])
   }
 
@@ -54,20 +82,33 @@ export default function NotifBell() {
     setNotifs(prev => prev.map(n => ({ ...n, lu: true })))
   }
 
-  useLayoutEffect(() => {
-    if (open && dropRef.current) {
-      const rect = dropRef.current.getBoundingClientRect()
-      setAlignLeft(rect.left < 8)
-    }
-    if (!open) setAlignLeft(false)
-  }, [open])
+  const calcPos = (btn: HTMLButtonElement): DropPos => {
+    const rect      = btn.getBoundingClientRect()
+    const dropW     = 320
+    const margin    = 8
+    const rightRoom = window.innerWidth - rect.right
+    return rightRoom >= dropW + margin
+      ? { top: rect.bottom + margin, left: rect.left }
+      : { top: rect.bottom + margin, right: window.innerWidth - rect.right }
+  }
+
+  const toggle = () => {
+    if (open) { setOpen(false); return }
+    if (buttonRef.current) setPos(calcPos(buttonRef.current))
+    setOpen(true)
+    if (nonLues > 0) markAllRead()
+  }
 
   const nonLues = notifs.filter(n => !n.lu).length
 
   return (
-    <div className="relative" ref={ref}>
-      <button onClick={() => { setOpen(v => !v); if (!open && nonLues > 0) markAllRead() }}
-        className="relative w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors" aria-label="Notifications">
+    <>
+      <button
+        ref={buttonRef}
+        onClick={toggle}
+        className="relative w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors flex-shrink-0"
+        aria-label="Notifications"
+      >
         <Bell size={19} className="text-gray-600" />
         {nonLues > 0 && (
           <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">
@@ -75,21 +116,49 @@ export default function NotifBell() {
           </span>
         )}
       </button>
-      {open && (
-        <div ref={dropRef} className={cn(
-          'absolute top-full mt-2 w-80 bg-white rounded-2xl shadow-[0_8px_40px_rgba(15,36,64,.16)] border border-gray-100 z-50 animate-fade-in overflow-hidden',
-          alignLeft ? 'left-0' : 'right-0',
-        )}>
+
+      {open && pos && (
+        <div
+          ref={dropRef}
+          style={{
+            position: 'fixed',
+            top:  pos.top,
+            ...(pos.right !== undefined ? { right: pos.right } : { left: pos.left }),
+            zIndex: 9999,
+            width: 320,
+          }}
+          className="bg-white rounded-2xl shadow-[0_8px_40px_rgba(15,36,64,.18)] border border-gray-100 overflow-hidden animate-fade-in"
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <p className="text-sm font-black text-gray-900">Notifications</p>
-            {nonLues > 0 && <button onClick={markAllRead} className="text-xs text-primary-500 hover:underline font-medium">Tout marquer lu</button>}
+            {nonLues > 0 && (
+              <button onClick={markAllRead} className="text-xs text-primary-500 hover:underline font-medium">
+                Tout marquer lu
+              </button>
+            )}
           </div>
+
           <div className="max-h-80 overflow-y-auto">
             {notifs.length === 0 ? (
-              <div className="py-10 text-center"><Bell size={28} className="text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-400">Aucune notification</p></div>
+              <div className="py-10 text-center">
+                <Bell size={28} className="text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Aucune notification</p>
+              </div>
             ) : notifs.map(n => (
-              <Link key={n.id} href={n.lien && ['/mon-espace/','/reservations/','/longue-duree/','/vente/','/avis/','/biens/','/proprietaire/'].some(p => n.lien!.startsWith(p)) ? n.lien : `/mon-espace/notifications/${n.id}`} onClick={() => setOpen(false)}
-                className={cn('block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors', !n.lu && 'bg-primary-50/50')}>
+              <Link
+                key={n.id}
+                href={
+                  n.lien && ['/mon-espace/', '/reservations/', '/longue-duree/', '/vente/', '/avis/', '/biens/', '/proprietaire/']
+                    .some(p => n.lien!.startsWith(p))
+                    ? n.lien
+                    : `/mon-espace/notifications/${n.id}`
+                }
+                onClick={() => setOpen(false)}
+                className={cn(
+                  'block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors',
+                  !n.lu && 'bg-primary-50/50',
+                )}
+              >
                 <div className="flex items-start gap-2.5">
                   {!n.lu && <div className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0" />}
                   <div className={cn('flex-1 min-w-0', n.lu && 'ml-4')}>
@@ -103,6 +172,6 @@ export default function NotifBell() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
