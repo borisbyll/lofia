@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
@@ -12,7 +12,9 @@ export default function NotifBell() {
   const { user } = useAuthStore()
   const [notifs, setNotifs] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const ref        = useRef<HTMLDivElement>(null)
+  const dropRef    = useRef<HTMLDivElement>(null)
+  const [alignLeft, setAlignLeft] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -51,6 +53,14 @@ export default function NotifBell() {
     setNotifs(prev => prev.map(n => ({ ...n, lu: true })))
   }
 
+  useLayoutEffect(() => {
+    if (open && dropRef.current) {
+      const rect = dropRef.current.getBoundingClientRect()
+      setAlignLeft(rect.left < 8)
+    }
+    if (!open) setAlignLeft(false)
+  }, [open])
+
   const nonLues = notifs.filter(n => !n.lu).length
 
   return (
@@ -65,7 +75,10 @@ export default function NotifBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-[0_8px_40px_rgba(15,36,64,.16)] border border-gray-100 z-50 animate-fade-in overflow-hidden">
+        <div ref={dropRef} className={cn(
+          'absolute top-full mt-2 w-80 bg-white rounded-2xl shadow-[0_8px_40px_rgba(15,36,64,.16)] border border-gray-100 z-50 animate-fade-in overflow-hidden',
+          alignLeft ? 'left-0' : 'right-0',
+        )}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <p className="text-sm font-black text-gray-900">Notifications</p>
             {nonLues > 0 && <button onClick={markAllRead} className="text-xs text-primary-500 hover:underline font-medium">Tout marquer lu</button>}
