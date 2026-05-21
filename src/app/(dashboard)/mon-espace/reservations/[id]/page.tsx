@@ -4,10 +4,11 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import {
   ChevronLeft, CheckCircle2, Clock, XCircle, Home,
-  MapPin, Phone, User, Calendar, Lock, Unlock, AlertTriangle,
+  MapPin, Phone, User, Calendar, Lock, Unlock, AlertTriangle, LogOut,
 } from 'lucide-react'
 import { formatPrix, formatDate } from '@/lib/utils'
 import { BRAND } from '@/lib/brand'
+import CheckoutButton from './CheckoutButton'
 
 function fmtHeure(h: string) {
   return h.substring(0, 5).replace(':', 'h')
@@ -33,8 +34,9 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
       paiement_effectue, paiement_at,
       check_in_at, liberation_fonds_at, heure_arrivee_prevue,
       arrivee_confirmee, proprio_paye, proprio_paye_at,
+      checkout_confirme, checkout_confirme_at,
       locataire_id, proprietaire_id,
-      bien:biens!bien_id(titre, slug, ville, adresse, latitude, longitude, photos, photo_principale),
+      bien:biens!bien_id(id, titre, slug, ville, adresse, latitude, longitude, photos, photo_principale),
       locataire:profiles!locataire_id(nom, phone, avatar_url),
       proprietaire:profiles!proprietaire_id(nom, phone, avatar_url)
     `)
@@ -54,8 +56,11 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
   const ref         = `LOFIA-${resa.id.slice(0, 8).toUpperCase()}`
 
   const liberationAt = resa.liberation_fonds_at ? new Date(resa.liberation_fonds_at) : null
-  const fondsLiberes  = resa.proprio_paye === true
-  const checkInFait   = resa.arrivee_confirmee === true
+  const fondsLiberes      = resa.proprio_paye === true
+  const checkInFait       = resa.arrivee_confirmee === true
+  const checkoutFait      = (resa as any).checkout_confirme === true
+  const checkoutPossible  = isProprietaire && resa.statut === 'en_sejour' && !checkoutFait
+    && new Date(resa.date_fin) <= new Date()
 
   const photo = bien?.photo_principale ?? bien?.photos?.[0] ?? null
   const mapsUrl = bien?.latitude && bien?.longitude
@@ -71,22 +76,25 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
       date:   resa.paiement_at ? fmtDateHeure(resa.paiement_at) : undefined,
     },
     {
-      label:  'Check-in confirmé par le locataire',
+      label:  'Check-in confirmé',
       done:   checkInFait,
       date:   resa.check_in_at ? fmtDateHeure(resa.check_in_at) : undefined,
-      sub:    !checkInFait ? 'Les fonds sont sécurisés en séquestre jusqu\'au check-in' : undefined,
+      sub:    !checkInFait ? 'En attente de l\'arrivée du locataire' : undefined,
+    },
+    {
+      label:  checkoutFait ? 'Check-out validé par vous' : 'Check-out à valider',
+      done:   checkoutFait,
+      date:   (resa as any).checkout_confirme_at
+        ? fmtDateHeure((resa as any).checkout_confirme_at)
+        : liberationAt
+        ? `Libération auto le ${fmtDateHeure(liberationAt.toISOString())} si non validé`
+        : undefined,
+      sub:    !checkoutFait && checkInFait ? 'Validez le départ du locataire le jour J' : undefined,
     },
     {
       label:  'Fonds libérés',
       done:   fondsLiberes,
-      date:   resa.proprio_paye_at
-        ? fmtDateHeure(resa.proprio_paye_at)
-        : liberationAt
-        ? `Prévu le ${fmtDateHeure(liberationAt.toISOString())}`
-        : undefined,
-      sub:    !fondsLiberes && checkInFait && liberationAt
-        ? `Libération automatique 24h après le check-in`
-        : undefined,
+      date:   resa.proprio_paye_at ? fmtDateHeure(resa.proprio_paye_at) : undefined,
     },
   ]
 
@@ -196,6 +204,40 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
             </div>
           )}
 
+          {/* Bouton checkout */}
+          {checkoutPossible && (
+            <CheckoutButton
+              resaId={resa.id}
+              bienId={(bien as any)?.id ?? ''}
+              locataireId={resa.locataire_id}
+              locataireNom={locataire?.nom ?? 'le locataire'}
+            />
+          )}
+
+          {/* Checkout déjà validé — bannière */}
+          {checkoutFait && !fondsLiberes && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
+              <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-emerald-800">Check-out validé</p>
+                <p className="text-xs text-emerald-600 mt-0.5">Les fonds sont en cours de transfert vers votre compte.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Rappel checkout à venir */}
+          {!checkoutFait && checkInFait && !checkoutPossible && resa.statut === 'en_sejour' && (
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
+              <LogOut size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-blue-800">Check-out prévu le {formatDate(resa.date_fin)}</p>
+                <p className="text-xs text-blue-600 mt-0.5">
+                  Le bouton de validation apparaîtra ce jour-là. Vous recevrez aussi une notification.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Dates + Finances */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
             <div className="flex items-center gap-2 mb-1">
@@ -240,7 +282,7 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
               </div>
               <div>
                 <p className="font-bold text-brun-nuit">Séquestre &amp; libération des fonds</p>
-                <p className="text-xs text-brun-doux">Fonds sécurisés jusqu&apos;au check-in du locataire</p>
+                <p className="text-xs text-brun-doux">Fonds libérés après votre validation du check-out</p>
               </div>
             </div>
             <ol className="space-y-0">
@@ -364,7 +406,7 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex items-start gap-3">
             <Lock size={15} className="text-gray-400 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-gray-500 leading-relaxed">
-              Votre paiement est sécurisé en séquestre. Les fonds ne sont transmis à l&apos;hôte que 24h après votre check-in confirmé.
+              Votre paiement est sécurisé en séquestre. Les fonds sont transmis à l&apos;hôte uniquement après la validation du check-out par le propriétaire le jour de votre départ.
             </p>
           </div>
         </>

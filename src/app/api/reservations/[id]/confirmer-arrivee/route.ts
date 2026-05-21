@@ -73,13 +73,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
 
     /* ── Notifications ─────────────────────────────────────── */
-    const liberationAt = new Date(maintenant.getTime() + 24 * 3600 * 1000)
-    const liberationStr = liberationAt.toLocaleDateString('fr-FR', {
-      weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
-    })
-
     const heureDisplay = resa.heure_arrivee_prevue
       ? resa.heure_arrivee_prevue.substring(0, 5).replace(':', 'h')
+      : null
+
+    const dateFinStr = resa.date_fin
+      ? new Date(resa.date_fin).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
       : null
 
     const { data: bienData } = await supabaseAdmin
@@ -87,23 +86,23 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const { data: locataireData } = await supabaseAdmin
       .from('profiles').select('nom').eq('id', resa.locataire_id).single()
 
-    const bienTitre   = (bienData as any)?.titre ?? 'votre bien'
-    const locNom      = (locataireData as any)?.nom ?? 'Le locataire'
-    const montanProprio = formatPrix(resa.montant_proprio ?? 0)
+    const bienTitre     = (bienData as any)?.titre ?? 'votre bien'
+    const locNom        = (locataireData as any)?.nom ?? 'Le locataire'
+    const montantProprio = formatPrix(resa.montant_proprio ?? 0)
 
     await supabaseAdmin.from('notifications').insert([
       {
         user_id: resa.proprietaire_id,
         type: 'check_in_confirme',
         titre: `✅ ${locNom} est arrivé${heureDisplay ? ` à ${heureDisplay}` : ''} !`,
-        corps: `Vos fonds (${montanProprio}) sont en séquestre et seront automatiquement libérés ${liberationStr}. Aucune action requise de votre part.`,
+        corps: `Vos fonds (${montantProprio}) sont sécurisés en séquestre. Le jour du départ${dateFinStr ? ` (${dateFinStr})` : ''}, vous devrez valider le check-out pour déclencher la libération. Vous recevrez un rappel ce jour-là.`,
         lien: `/mon-espace/reservations/${params.id}`,
       },
       {
         user_id: resa.locataire_id,
         type: 'check_in_confirme',
-        titre: '✅ Check-in enregistré !',
-        corps: `Votre arrivée à "${bienTitre}" a bien été confirmée. Les fonds seront transmis à votre hôte le ${liberationStr}.`,
+        titre: '✅ Check-in enregistré — Bienvenue !',
+        corps: `Votre arrivée à "${bienTitre}" a été confirmée. Bon séjour ! Votre départ est prévu${dateFinStr ? ` le ${dateFinStr}` : ''}. Les fonds seront transmis à votre hôte après la validation du check-out.`,
         lien: `/mon-espace/reservations/${params.id}`,
       },
     ])
